@@ -37,11 +37,7 @@ INSTALLATION AND EXECUTION
 1. Open the project in VS Code or a terminal.
 2. Delete, create, and activate a virtual environment:
        rmdir -Recurse -Force .venv 2>$null
-<<<<<<<< HEAD:README_PROJECT_OVERVIEW.txt
-       python -3.14 venv .venv
-========
        python -m venv .venv
->>>>>>>> 95b2434 (Update Iteration 1 with latest fixes):README_PROJECT_SETUP.txt
        .\.venv\Scripts\activate
 3. Install dependencies:
        pip install -r requirements.txt
