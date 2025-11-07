@@ -1,0 +1,97 @@
+<!-- Version 1 -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page Heading and Description -->
+ <!-- Reference: Jinja control structures (Pallets Projects, 2024)
+https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structures -->
+<h2 style="margin:0 0 6px">Admin — Verify Organisers</h2>
+<p class="muted" style="margin:0 0 12px">
+  Approve or revoke organiser verification. Verified organisers can publish events.
+</p>
+
+<!-- Main container card -->
+<div class="card">
+  <!-- Reference: Jinja tests & filters (Pallets Projects, 2024)
+  https://jinja.palletsprojects.com/en/stable/templates/#tests -->
+  {% if orgs and orgs|length > 0 %}
+  <!-- Summary Row -->
+    <div class="row" style="margin-bottom:10px; gap:10px; align-items:center">
+      <span class="badge"><strong>{{ orgs|length }}</strong> total</span>
+    </div>
+
+    <!-- Table displaying organiser records -->
+    <!-- Reference: MDN HTML tables & structure (MDN, 2024)
+    https://developer.mozilla.org/en-US/docs/Learn/HTML/Tables/Basics -->
+    <!-- Reference: MDN accessibility patterns (MDN, 2024)
+    https://developer.mozilla.org/en-US/docs/Learn/Accessibility/HTML -->
+    <div style="overflow-x:auto">
+      <table style="width:100%; border-collapse:separate; border-spacing:0 8px">
+        <thead>
+          <tr style="text-align:left; color:var(--muted); font-size:.9rem">
+            <th style="padding:8px 10px">Organisation</th>
+            <th style="padding:8px 10px">Email</th>
+            <th style="padding:8px 10px">Charity No.</th>
+            <th style="padding:8px 10px">Status</th>
+            <th style="padding:8px 10px" class="text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+
+          <!-- Loop through organiser objects passed from Flask view -->
+          <!-- Reference: Jinja for-loop (Pallets Projects, 2024)
+          https://jinja.palletsprojects.com/en/stable/templates/#for -->
+          {% for org in orgs %}
+          <tr class="card" style="padding:0">
+            <!-- Organisation name (fallback if null) -->
+            <td style="padding:12px 10px"><strong>{{ org.organisation_name or 'Unnamed organisation' }}</strong></td>
+            <!-- Linked user email (if organiser has associated user account) -->
+            <td style="padding:12px 10px">{{ org.user.email if org.user else '—' }}</td>
+            <!-- Charity registration number (optional field) -->
+            <td style="padding:12px 10px">{{ org.charity_number or '—' }}</td>
+            <!-- Verification status badge -->
+            <!-- Reference: Jinja if/else (Pallets Projects, 2024)
+            https://jinja.palletsprojects.com/en/stable/templates/#if -->
+            <td style="padding:12px 10px">
+              {% if org.verified %}
+                <!-- Green badge = verified -->
+                <span class="badge" style="color:#065f46; border-color:rgba(16,185,129,.35); background:rgba(16,185,129,.08)">
+                  Verified
+                </span>
+              {% else %}
+                <!-- Amber badge = pending -->
+                <span class="badge" style="color:#7c2d12; border-color:rgba(245,158,11,.45); background:rgba(245,158,11,.12)">
+                  Pending
+                </span>
+              {% endif %}
+            </td>
+            <!-- Action column with verification toggle form -->
+            <td style="padding:12px 10px" class="text-right">
+              <!-- Reference: Flask url_for (Pallets Projects, 2024)
+              https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+              <form method="post" action="{{ url_for('main.admin_toggle_verify', org_id=org.id) }}">
+                <!-- CSRF token for security (Flask-WTF integration) -->
+                <!-- Reference: Flask-WTF CSRF token in forms (Pallets Projects, 2024)
+                https://flask-wtf.readthedocs.io/en/1.2.x/csrf/ -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <!-- Button toggles verification based on current state -->
+                <button type="submit" class="btn {% if org.verified %}outline{% else %}primary{% endif %}">
+                  {% if org.verified %}Unverify{% else %}Verify{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <!-- Message shown if there are no organisers to verify -->
+    <div class="flash info">No organisers found.</div>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+<!-- Version 1 -->

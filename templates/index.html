@@ -1,0 +1,86 @@
+<!-- Version 1 -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<!-- HERO / INTRO SECTION -->
+<section class="hero">
+  <div class="row space-between">
+    <div>
+      <h1>Find and support verified charity events</h1>
+      <p>Transparent allocations. Instant tickets.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Role-based message banner -->
+ <!-- Reference: Jinja if (Pallets Projects, 2024)
+https://jinja.palletsprojects.com/en/stable/templates/#if -->
+{% if current_role in ['organiser','admin'] %}
+  <!-- Visible to Organisers/Admins: quick access to event creation -->
+  <div class="flash info">
+    <!-- Reference: Flask url_for (Pallets Projects, 2024)
+    https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+    You can create events via <a href="{{ url_for('main.event_new') }}">New Event</a>.
+    Current role: <strong>{{ current_role }}</strong>.
+  </div>
+{% else %}
+  <!-- Visible to regular users -->
+  <p class="muted">Browse and buy tickets below.</p>
+{% endif %}
+
+<!-- EVENT GRID LISTING -->
+<!-- Reference: Jinja for-loop (Pallets Projects, 2024)
+https://jinja.palletsprojects.com/en/stable/templates/#for -->
+{% if events %}
+  <!-- Events exist: render as responsive grid -->
+  <div class="events-grid">
+    {% for ev in events %}
+      <!-- Each card represents a single verified event -->
+      <div class="card event-card" style="position:relative">
+        <!-- Placeholder media / hero image -->
+        <div class="event-media"></div>
+
+        <!-- Event summary body -->
+        <div class="event-body">
+          <div class="row space-between" style="align-items:flex-start">
+            <!-- Event title -->
+            <h3 class="event-title" style="margin:0">{{ ev.title }}</h3>
+            <!-- Ticket price displayed clearly -->
+            <span class="price-chip" style="position:static; font-weight:700; box-shadow:none; border:none; background:none; padding:0;">
+              €{{ '%.2f' % (ev.ticket_price_cents/100) }}
+            </span>
+          </div>
+
+          <!-- Event metadata: date/time and venue -->
+          <!-- Reference: Python datetime strftime in templates (PSF, 2024)
+          https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
+          <div class="event-meta">
+            {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+          </div>
+
+          <!-- Optional short description -->
+          {% if ev.description %}
+            <p class="event-desc">{{ ev.description }}</p>
+          {% endif %}
+
+           <!-- Action buttons -->
+          <div class="event-actions">
+            <!-- Reference: Flask url_for (Pallets Projects, 2024)
+            https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+            <!-- View details (navigates to event_detail.html) -->
+            <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">View</a>
+            <!-- Direct link to checkout (event_buy.html) -->
+            <a class="btn primary" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <!-- No events available -->
+  <div class="card"><p class="muted" style="margin:0">No events yet.</p></div>
+{% endif %}
+{% endblock %}
+
+<!-- Version 1 -->

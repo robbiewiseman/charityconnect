@@ -1,0 +1,92 @@
+<!-- Version 1 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Metadata and page title -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Reference: Jinja variables (Pallets Projects, 2024)
+  https://jinja.palletsprojects.com/en/stable/templates/#variables -->
+  <title>{{ title or "CharityConnect" }}</title>
+  <!-- Link to global CSS stylesheet (stored in /static/style.css) -->
+  <!-- Reference: Flask url_for for static files (Pallets Projects, 2024)
+  https://flask.palletsprojects.com/en/stable/quickstart/#static-files -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<!-- Header Section -->
+<header>
+  <!-- Wrapper row for logo and navigation links -->
+  <div class="wrap row" style="justify-content:space-between;align-items:center">
+    <!-- Left side: Logo and navigation links -->
+    <div class="row" style="gap:18px; align-items:center">
+      <!-- Clickable CharityConnect logo (returns to homepage) -->
+      <!-- Reference: Flask url_for (Pallets Projects, 2024)
+      https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+      <a href="{{ url_for('main.index') }}" class="row" style="align-items:center; text-decoration:none;">
+        <!-- Reference: Flask static files via url_for (Pallets Projects, 2024)
+        https://flask.palletsprojects.com/en/stable/quickstart/#static-files -->
+        <img src="{{ url_for('static', filename='images/CharityConnectLogo.jpg') }}" 
+             alt="CharityConnect Logo" 
+             style="height:40px; width:auto; border-radius:6px;">
+      </a>
+
+      <!-- Always visible link: Event browsing -->
+      <a href="{{ url_for('main.index') }}">Events</a>
+
+      <!-- Conditional navigation link visible only to organisers or admins -->
+      <!-- Reference: Jinja if (Pallets Projects, 2024)
+      https://jinja.palletsprojects.com/en/stable/templates/#if -->
+      {% if current_role in ['organiser','admin'] %}
+        <a href="{{ url_for('main.event_new') }}">New Event</a>
+      {% endif %}
+
+      <!-- Admin-only link to the verification dashboard -->
+      {% if current_role == 'admin' %}
+        <a href="{{ url_for('main.admin_verify') }}">Admin</a>
+      {% endif %}
+    </div>
+
+    <!-- Right side: Role display and quick role switching (for demo/testing) -->
+    <div class="row" style="gap:6px; align-items:center">
+      <!-- Current role shown as badge -->
+      <span class="badge">Role: {{ current_role or 'user' }}</span>
+      <!-- Role switching buttons using session-based route -->
+      <a class="btn outline" href="{{ url_for('main.switch_role', role='user') }}">User</a>
+      <a class="btn outline" href="{{ url_for('main.switch_role', role='organiser') }}">Organiser</a>
+      <a class="btn outline" href="{{ url_for('main.switch_role', role='admin') }}">Admin</a>
+    </div>
+  </div>
+</header>
+
+<!-- Main Content Section-->
+<main class="wrap">
+  <!-- Flask flash message handler -->
+  <!-- Reference: Flask flashing messages (Pallets Projects, 2024)
+  https://flask.palletsprojects.com/en/stable/patterns/flashing/ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat,msg in messages %}
+        <div class="flash {{ cat if cat else '' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  <!-- Content block replaced dynamically by child templates -->
+  <!-- Reference: Jinja template inheritance blocks (Pallets Projects, 2024)
+  https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer style="border-top:1px solid var(--line); background:#fff; margin-top:40px;">
+  <div class="wrap row" style="justify-content:space-between; align-items:center; padding:16px 0; color:var(--muted); font-size:0.9rem;">
+    <span>© 2025 CharityConnect — Developed by Robbie Wiseman</span>
+    <span>All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>
+
+<!-- Version 1 -->

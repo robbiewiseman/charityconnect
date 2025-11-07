@@ -1,0 +1,45 @@
+<!-- Version 1 -->
+
+<!-- Order Confirmation Layout -->
+<!-- Reference: Jinja template inheritance block (Pallets Projects, 2024)
+https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <!-- Primary order summary card -->
+    <!-- Reference: Bootstrap 5 utilities (Bootstrap, 2024)
+    https://getbootstrap.com/docs/5.3/getting-started/introduction/ -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <!-- Dynamic heading: unique order identifier -->
+        <h3 class="card-title mb-3">Order #{{ order.id }}</h3>
+
+        <!-- SECTION: Order Details -->
+        <div class="border rounded p-3 mb-3">
+          <!-- Row 1: Event title + ticket quantity -->
+          <div class="d-flex justify-content-between">
+            <div><strong>Event:</strong> {{ order.event.title }}</div>
+            <div><strong>Tickets:</strong> {{ order.qty }}</div>
+          </div>
+          <!-- Event date/time (read-only display) -->
+          <!-- Reference: Python datetime strftime in templates (PSF, 2024)
+          https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
+          <div class="text-muted small">{{ order.event.starts_at.strftime('%Y-%m-%d %H:%M') }}</div>
+          <!-- Purchaser’s email address -->
+          <div class="mt-2"><strong>Email:</strong> {{ order.email }}</div>
+          <!-- Total paid (calculated from order.total_cents in euros) -->
+          <div class="mt-2"><strong>Total:</strong> €{{ '%.2f' % (order.total_cents/100) }}</div>
+        </div>
+
+        <!-- Navigation: return to event listings -->
+        <!-- Reference: Flask url_for (Pallets Projects, 2024)
+        https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+        <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+<!-- Version 1 -->

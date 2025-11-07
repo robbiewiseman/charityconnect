@@ -1,0 +1,15 @@
+# VERSION 1
+
+flask
+flask_sqlalchemy
+flask_login
+flask_wtf
+email_validator
+python-dotenv
+reportlab
+qrcode
+pillow
+flask_mail
+psycopg2-binary
+
+# VERSION 1

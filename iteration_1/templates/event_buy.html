@@ -1,0 +1,131 @@
+<!-- Version 1 -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Main checkout layout: two-column structure -->
+<div class="row" style="align-items:flex-start; gap:18px">
+  <!-- LEFT COLUMN: Checkout form + Beneficiary breakdown -->
+  <div class="grow">
+    <!-- Card: Checkout Form -->
+    <div class="card">
+      <!-- Dynamic event title and metadata -->
+      <h2 style="margin-top:0">Checkout — {{ ev.title }}</h2>
+      <!-- Reference: Python datetime strftime in templates (PSF, 2024)
+      https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
+      <div class="muted" style="margin:-4px 0 12px">
+        {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+      </div>
+
+      <!-- Flask-WTF form handling user input for checkout -->
+      <!-- Reference: Flask-WTF form handling & CSRF (Pallets Projects, 2024)
+      https://flask-wtf.readthedocs.io/en/1.2.x/quickstart/
+      https://flask-wtf.readthedocs.io/en/1.2.x/form/
+      https://flask-wtf.readthedocs.io/en/1.2.x/csrf/ -->
+      <form method="post" novalidate>
+        <!-- Hidden CSRF token and internal fields -->
+        {{ form.hidden_tag() }}
+
+        <!-- Email input -->
+        <label for="{{ form.email.id }}">Email</label>
+        {{ form.email(id="email", class="") }}
+        <!-- Inline validation errors -->
+        {% for e in form.email.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+
+        <!-- Row: Ticket quantity and optional donation -->
+        <div class="row" style="gap:12px; margin-top:8px">
+          <!-- Ticket quantity input -->
+          <div style="flex:1">
+            <label for="{{ form.qty.id }}">Tickets</label>
+            {{ form.qty(id="qty", class="") }}
+            {% for e in form.qty.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+          </div>
+
+          <!-- Optional donation input -->
+          <div style="flex:1">
+            <label for="{{ form.donation_eur.id }}">Optional Donation (€)</label>
+            {{ form.donation_eur(id="donation_eur", class="") }}
+            {% for e in form.donation_eur.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+          </div>
+        </div>
+
+        <!-- CSRF token validation errors -->
+        {% if form.csrf_token.errors %}
+          {% for e in form.csrf_token.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+        {% endif %}
+
+        <!-- Submit + Cancel buttons -->
+        <div class="row" style="justify-content:flex-end; gap:10px; margin-top:14px">
+          <!-- Cancel returns to event detail page -->
+          <!-- Reference: Flask url_for (Pallets Projects, 2024)
+          https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+          <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">Cancel</a>
+          <!-- Submit triggers backend Stripe checkout logic -->
+          {{ form.submit(class="btn primary") }}
+        </div>
+      </form>
+    </div>
+
+    <!-- Card: Allocation transparency (where funds go) -->
+    <div class="card" style="margin-top:18px">
+      <h3 style="margin:0 0 8px">Where your money goes</h3>
+
+      <!-- Reference: Jinja for-loop (Pallets Projects, 2024)
+      https://jinja.palletsprojects.com/en/stable/templates/#for -->
+      {% if ev.beneficiaries %}
+        <!-- List of verified beneficiary charities and allocation percentages -->
+        <div class="row" style="flex-direction:column; gap:8px">
+          {% for b in ev.beneficiaries %}
+            <div class="row space-between" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff">
+              <strong>{{ b.charity.name }}</strong>
+              <span class="badge" style="font-weight:700">{{ b.allocation_percent }}%</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <!-- Fallback if event has no defined beneficiaries -->
+        <p class="muted" style="margin:0">Allocations will be confirmed by the organiser.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Order Summary Sidebar -->
+  <aside style="width:340px; max-width:100%">
+    <div class="card ticket">
+      <div class="row space-between">
+        <strong>Order Summary</strong>
+      </div>
+
+      <!-- Static price details (live total calculated on submission) -->
+      <div style="margin-top:12px">
+        <div class="row space-between">
+          <span>Ticket price</span>
+          <strong>€{{ '%.2f' % (ev.ticket_price_cents/100) }}</strong>
+        </div>
+        <div class="row space-between" style="margin-top:6px">
+          <span>Quantity</span>
+          <strong>—</strong>
+        </div>
+        <div class="row space-between" style="margin-top:6px">
+          <span>Donation</span>
+          <strong>—</strong>
+        </div>
+
+        <hr style="margin:12px 0; border:none; border-top:1px solid var(--line)">
+        <div class="row space-between" style="font-size:1.05rem">
+          <span>Total</span>
+          <strong>Calculated at checkout</strong>
+        </div>
+      </div>
+
+      <!-- Confirmation note -->
+      <div class="muted" style="font-size:.9rem; margin-top:12px">
+        You’ll see your order confirmation immediately after payment.
+      </div>
+    </div>
+  </aside>
+</div>
+
+{% endblock %}
+
+<!-- Version 1 -->
