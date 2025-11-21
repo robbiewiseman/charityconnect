@@ -4,7 +4,7 @@
 # Each form handles user input and validation for specific parts of the system.
 
 from flask_wtf import FlaskForm
-from wtforms import (StringField, PasswordField, SubmitField, IntegerField, TextAreaField, SelectField, BooleanField, DateTimeLocalField, DecimalField, FieldList, FormField)
+from wtforms import (StringField, PasswordField, SubmitField, IntegerField, TextAreaField, SelectField, BooleanField, DateTimeLocalField, DecimalField, FieldList, FormField, EmailField)
 from wtforms.validators import DataRequired, Email, Length, NumberRange, EqualTo, Optional
 
 # User registration form
@@ -38,7 +38,7 @@ class LoginForm(FlaskForm):
 class BeneficiaryForm(FlaskForm):
     # Used inside EventForm to assign charity beneficiaries and their percentage allocations
     charity_id = SelectField("Charity", coerce=int, validators=[DataRequired()])
-    allocation_percent = IntegerField("% Allocation", validators=[DataRequired(), NumberRange(min=0, max=100)])
+    allocation_percent = IntegerField("% Allocation", validators=[DataRequired(), NumberRange(min=1, max=100)])
 
 # Event creation form
 class EventForm(FlaskForm):
@@ -69,5 +69,23 @@ class PurchaseForm(FlaskForm):
     # Reference: Flask-WTF CSRF hidden tag used in templates via FlaskForm (Pallets Projects, 2024)
     # https://flask-wtf.readthedocs.io/en/1.2.x/form/
     submit = SubmitField("Confirm Order")
+
+# VERSION 2 START
+class ApplyVerificationForm(FlaskForm):
+    # Whether the applicant is an event organiser or a registered charity
+    org_type = SelectField(
+        "I am applying as",
+        choices=[("organiser", "Organiser"), ("charity", "Charity")],
+        validators=[DataRequired()]
+    )
+    # Name of the organisation applying for verification
+    organisation_name = StringField("Organisation Name", validators=[DataRequired()])
+    # Optional charity registration number (only relevant for charities)
+    charity_number = StringField("Charity Number (optional)")
+    # Main contact email for verification follow-up
+    contact_email = EmailField("Contact Email", validators=[DataRequired(), Email()])
+    # Submit button for the verification request
+    submit = SubmitField("Submit Application")
+# VERSION 2 END
 
 # VERSION 1

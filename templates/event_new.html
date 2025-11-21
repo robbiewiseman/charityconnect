@@ -25,19 +25,25 @@
         <!-- Title -->
         <label for="{{ form.title.id }}">Title</label>
         {{ form.title(class="", placeholder="e.g. Cork Christmas Fundraiser") }}
-        {% for e in form.title.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+        {% for e in form.title.errors %}
+          <div class="flash danger">{{ e }}</div>
+        {% endfor %}
 
         <!-- Description -->
         <label for="{{ form.description.id }}">Description</label>
         {{ form.description(class="", rows="4", placeholder="What’s the event about?") }}
-        {% for e in form.description.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+        {% for e in form.description.errors %}
+          <div class="flash danger">{{ e }}</div>
+        {% endfor %}
 
         <!-- Venue + Start datetime -->
         <div class="row" style="gap:12px; margin-top:8px">
           <div style="flex:1">
             <label for="{{ form.venue.id }}">Venue</label>
             {{ form.venue(class="", placeholder="e.g. City Hall, Cork") }}
-            {% for e in form.venue.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+            {% for e in form.venue.errors %}
+              <div class="flash danger">{{ e }}</div>
+            {% endfor %}
           </div>
           <div style="flex:1">
             <label for="{{ form.starts_at.id }}">Starts At</label>
@@ -45,7 +51,9 @@
             <!-- Reference: HTML input type "datetime-local" (MDN, 2024)
             https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/datetime-local -->
             {{ form.starts_at(class="", type="datetime-local") }}
-            {% for e in form.starts_at.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+            {% for e in form.starts_at.errors %}
+              <div class="flash danger">{{ e }}</div>
+            {% endfor %}
           </div>
         </div>
 
@@ -54,7 +62,9 @@
           <div style="flex:1">
             <label for="{{ form.ticket_price_eur.id }}">Ticket Price (€)</label>
             {{ form.ticket_price_eur(class="", placeholder="e.g. 15.00") }}
-            {% for e in form.ticket_price_eur.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+            {% for e in form.ticket_price_eur.errors %}
+              <div class="flash danger">{{ e }}</div>
+            {% endfor %}
           </div>
           <!-- Simple publish-now checkbox (server decides draft vs published) -->
           <div style="flex:1; display:flex; align-items:end">
@@ -93,17 +103,21 @@
               <div class="grow">
                 <label for="{{ b.charity_id.id }}">Charity</label>
                 {{ b.charity_id(class="") }}
-                {% for e in b.charity_id.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+                {% for e in b.charity_id.errors %}
+                  <div class="flash danger">{{ e }}</div>
+                {% endfor %}
               </div>
               <div style="width:160px">
                 <label for="{{ b.allocation_percent.id }}">% Allocation</label>
                 {{ b.allocation_percent(class="", placeholder="e.g. 50") }}
-                {% for e in b.allocation_percent.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+                {% for e in b.allocation_percent.errors %}
+                  <div class="flash danger">{{ e }}</div>
+                {% endfor %}
               </div>
             </div>
           {% endfor %}
         </div>
-
+    
         <!-- Global form errors (e.g., CSRF issues; allocation sum != 100 handled in view/form validators) -->
         <!-- Reference: Flask-WTF CSRF error reporting (Pallets Projects, 2024)
         https://flask-wtf.readthedocs.io/en/1.2.x/csrf/ -->
@@ -143,7 +157,6 @@
             {% endif %}
           </strong>
         </div>
-
          <!-- Allocation total: not calculated here (no JS); enforced on submit -->
         <div class="row space-between" style="margin-top:6px">
           <span>Allocation total</span>

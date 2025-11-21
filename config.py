@@ -22,12 +22,20 @@ class Config:
     # Disable SQLAlchemy's event system to improve performance
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    # Email server settings (used for sending confirmation or receipt emails)
-    MAIL_SERVER = os.getenv("MAIL_SERVER", "localhost")
-    MAIL_PORT = int(os.getenv("MAIL_PORT", "25"))
-    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@charityconnect.local")
-
-    # Suppress email sending by default (useful for local testing)
-    MAIL_SUPPRESS_SEND = os.getenv("MAIL_SUPPRESS_SEND", "true").lower() == "true"
+    # VERSION 2 START
+    # Reference: Stripe API key handling follows Stripe’s security guidance to store keys securely
+    # Url: https://docs.stripe.com/keys
+    # Stripe API keys loaded from environment variables
+    STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
+    STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY", "")
+    STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+    # Database engine settings to keep connections healthy and stable
+    SQLALCHEMY_ENGINE_OPTIONS = {
+    "pool_pre_ping": True,   # checks connections before using them to avoid stale connections
+    "pool_recycle": 300,    # refresh connections every 5 minutes (helps with long-lived DB sessions)
+    "pool_size": 5,   # base number of open DB connections  
+    "max_overflow": 10,   # extra connections allowed during spikes in activity
+}
+    # VERSION 2 END
 
 # VERSION 1

@@ -3,15 +3,107 @@
 {% extends "base.html" %}
 {% block content %}
 
+<!-- VERSION 2 START -->
 <!-- HERO / INTRO SECTION -->
 <section class="hero">
-  <div class="row space-between">
-    <div>
-      <h1>Find and support verified charity events</h1>
-      <p>Transparent allocations. Instant tickets.</p>
+  <!-- Two-column intro layout: headline + description on the left, summary card on the right -->
+  <div class="row space-between" style="align-items:flex-start; gap:20px">
+    <!-- Main intro text explaining the platform’s purpose -->
+    <div style="max-width:540px">
+      <h1 style="margin-bottom:8px">Support real charities through transparent ticketed events</h1>
+      <p class="muted" style="font-size:1.05rem; margin:0 0 14px">
+        CharityConnect helps organisers run verified charity events, and gives donors clear visibility
+        on where their ticket money and donations go.
+      </p>
+      <p class="muted" style="margin:0">
+        Browse live events below, or apply for organiser / charity verification to publish your own.
+      </p>
+    </div>
+
+    <!-- Right-side summary card giving a quick explanation of what the platform does -->
+    <div class="card" style="max-width:320px">
+      <h3 style="margin-top:0; margin-bottom:6px">What is CharityConnect?</h3>
+      <p class="muted" style="margin:0 0 8px; font-size:.95rem;">
+        A simple platform for:
+      </p>
+      <ul style="margin:0 0 8px 18px; padding:0; font-size:.95rem;">
+        <li>Running ticketed charity events</li>
+        <li>Splitting funds across multiple charities</li>
+        <li>Issuing QR-coded receipts for transparency</li>
+      </ul>
+      <p class="muted" style="margin:0; font-size:.9rem;">
+        This prototype focuses on verified organisers, transparent allocations,
+        and clear donation receipts.
+      </p>
     </div>
   </div>
 </section>
+
+<!-- METRIC / META BOX STRIP -->
+<section style="margin-top:10px">
+  <div class="row" style="gap:16px; flex-wrap:wrap">
+    <!-- Three small cards showing example platform metrics (static sample values for now) -->
+    <div class="card" style="flex:1 1 180px; min-width:180px">
+      <span class="muted" style="font-size:.85rem">Charities supported</span>
+      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">24+</div>
+      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
+        Example figure showing the number of registered charity partners.
+      </p>
+    </div>
+
+    <div class="card" style="flex:1 1 180px; min-width:180px">
+      <span class="muted" style="font-size:.85rem">Tickets processed</span>
+      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">1,250+</div>
+      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
+        Sample count of tickets issued across all events on the platform.
+      </p>
+    </div>
+
+    <div class="card" style="flex:1 1 180px; min-width:180px">
+      <span class="muted" style="font-size:.85rem">Funds raised</span>
+      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">€85,000+</div>
+      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
+        Illustrative total combining ticket revenue and optional donations.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS / ORGANISER VALUE -->
+<section style="margin-top:20px">
+  <!-- Two cards: one explaining the workflow, one explaining organiser benefits -->
+  <div class="row" style="gap:16px; align-items:stretch; flex-wrap:wrap">
+    <!-- High-level steps showing the end-to-end flow for events and donations -->
+    <div class="card" style="flex:1 1 260px; min-width:260px">
+      <h3 style="margin:0 0 8px">How CharityConnect works</h3>
+      <ol style="margin:0 0 4px 18px; padding:0; font-size:.95rem;">
+        <li>Organisers or charities apply for verification.</li>
+        <li>Admins review applications in the verification dashboard.</li>
+        <li>Verified organisers can publish ticketed events.</li>
+        <li>Donors buy tickets, optionally add a donation, and receive a QR-coded receipt.</li>
+        <li>Funds are allocated to charities according to the published percentages.</li>
+      </ol>
+      <p class="muted" style="margin:6px 0 0; font-size:.85rem;">
+        The current iteration focuses on this end-to-end flow for a small set of sample events.
+      </p>
+    </div>
+
+    <!-- Reasons an organiser would choose CharityConnect for their fundraising -->
+    <div class="card" style="flex:1 1 260px; min-width:260px">
+      <h3 style="margin:0 0 8px">Why organisers use CharityConnect</h3>
+      <ul style="margin:0 0 4px 18px; padding:0; font-size:.95rem;">
+        <li>Clear audit trail for each order and receipt.</li>
+        <li>Built-in split allocations across multiple charities.</li>
+        <li>Simple Stripe checkout with instant confirmation.</li>
+        <li>Verification step to build trust with donors.</li>
+      </ul>
+      <p class="muted" style="margin:6px 0 0; font-size:.85rem;">
+        These benefits are demonstrated using seeded example data and flows in this prototype.
+      </p>
+    </div>
+  </div>
+</section>
+<!-- VERSION 2 END -->
 
 <!-- Role-based message banner -->
  <!-- Reference: Jinja if (Pallets Projects, 2024)

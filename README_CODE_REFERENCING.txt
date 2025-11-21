@@ -14,13 +14,17 @@ https://flask.palletsprojects.com/en/stable/patterns/appfactories/
 https://flask.palletsprojects.com/en/stable/blueprints/
 https://flask.palletsprojects.com/en/stable/tutorial/views/
 https://flask.palletsprojects.com/en/stable/config/
+# VERSION 2 START 
+https://flask.palletsprojects.com/en/stable/templating/#context-processors
 Usage:
 app.py: Application factory structure (`create_app()`), environment configuration, and extension initialisation.
-routes.py: Blueprint registration, route definitions, and use of decorators.
+routes.py: Blueprint registration, route definitions, use of decorators, and use of context processors to inject global variables into templates.
 config.py: Configuration object pattern for environment variables and security keys.
 seed.py: Use of `app.app_context()` for database initialisation and shell context access.
 forms.py: Form structure and CSRF protection integrated through Flask-WTF (extension documented within Flask).
-Notes: The Flask documentation guided the structural design of the web application, including the modular app factory setup, Blueprint routing system, and integration of extensions (CSRF, database, and mail). All framework-level logic was written independently following official Flask conventions.
+Templates: Use of context processors to expose helper values globally.
+Notes: The Flask documentation guided the structural design of the web application, including the modular app factory setup, Blueprint routing system, context processors, and integration of extensions (CSRF, database, and mail). All framework-level logic was written independently following official Flask conventions.
+# VERSION 2 END
 
 
 2. SQLAlchemy 2.0 Documentation (SQLAlchemy, 2024)
@@ -32,12 +36,16 @@ https://docs.sqlalchemy.org/en/20/orm/relationship_api.html
 https://docs.sqlalchemy.org/en/20/orm/session_basics.html
 https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
 https://docs.sqlalchemy.org/en/20/core/engines.html
+# VERSION 2 START
+https://docs.sqlalchemy.org/en/20/core/connections.html#engine-disposal
 Usage:
 models.py: Model definitions, relationships, and ORM cascade patterns.
 routes.py: Querying, filtering, and session commits.
 seed.py: Database initialisation and session handling.
 app.py: Integration of SQLAlchemy with Flask app factory.
-Notes: SQLAlchemy’s ORM layer was used for all model relationships, cascade deletes, and session operations. These patterns were adapted from the official 2.0 documentation and tailored for the CharityConnect schema.
+Iteration 2: Engine disposal/reconnect pattern used to improve connection stability (especially with Neon and webhook processing).
+Notes: SQLAlchemy’s ORM layer was used for all model relationships, cascade deletes, session operations, and engine disposal patterns. These patterns were adapted from the official 2.0 documentation and tailored for the CharityConnect schema.
+# VERSION 2 END
 
 
 3. Flask-WTF Documentation (Pallets Projects, 2024)
@@ -161,6 +169,66 @@ Notes: Bootstrap utility classes were selectively used for responsive grid align
 CSS: https://chatgpt.com/share/690e2571-05ec-8004-8017-1c480e7546dd
 Routes.py: https://chatgpt.com/share/690df926-fc70-8004-8452-e99ab50a799c
 Models.py: https://chatgpt.com/share/690dfb57-a0a0-8004-8d11-cfb295a3e904
+# VERSION 2 START 
+receipt builder in routes.py: https://chatgpt.com/share/691d0c58-b260-8004-8756-d6215df38da4
+# VERSION 2 END
 
 ====================================================================================
 # VERSION 1
+====================================================================================
+
+# VERSION 2 START
+====================================================================================
+
+
+15. Stripe Webhooks & Checkout Documentation (Stripe, 2025)
+URLs:
+https://docs.stripe.com/webhooks/quickstart?lang=python
+https://docs.stripe.com/testing
+https://docs.stripe.com/api/checkout/sessions/create
+https://docs.stripe.com/payments/checkout/fulfillment?lang=python
+Usage:
+routes.py: Creation of Stripe Checkout Sessions (stripe.checkout.Session.create).
+Webhook verification and event handling using Stripe’s official signature-checking pattern.
+PaymentIntent confirmation workflow adapted from the Quickstart guide.
+Handling asynchronous fulfilment of orders based on Checkout Session status.
+Test cards and scenarios from Stripe Testing documentation used during development.
+Notes: Stripe documentation guided the full implementation of secure payment flows, including Session creation, webhook signature validation, and post-payment order fulfilment. All Stripe-related functionality was written using the official API guidance, then adapted to the architecture of CharityConnect.
+
+
+16. ReportLab PDF Generation Documentation used to undertsand the ChatGPT code (ReportLab, 2025)
+URL: https://docs.reportlab.com/reportlab/userguide/ch2_graphics/
+Usage:
+build_receipt_pdf(): PDF canvas creation, drawing shapes, placing text, styling, and positioning elements.
+Adding QR images using ImageReader and placing them on the PDF.
+Managing page sizes (A4) and coordinate systems for clean layout.
+Notes: The ReportLab User Guide informed the entire layout and PDF generation logic used to produce donation receipts, including header styling, text placement, and image embedding.
+
+
+17. Python qrcode Library Documentation (Lincoln Loop, 2025)
+URL: https://pypi.org/project/qrcode/
+Usage:
+Creation of QR images in memory for order verification.
+Encoding the verification URL and exporting it to a BytesIO buffer.
+Used directly inside the receipt generator prior to embedding via ReportLab.
+Notes: The library was used to implement secure QR verification on receipts, following patterns from the official documentation.
+
+
+18. Flask send_file Documentation (Pallets Projects, 2025)
+URL: https://flask.palletsprojects.com/en/stable/api/#flask.send_file
+Usage:
+Returning PDF receipts as binary streams to the user.
+Correct MIME-type configuration for PDF output.
+Secure filename and streaming control.
+Notes: Used for delivering dynamically-generated receipts to end users directly via the browser.
+
+
+19. SQLAlchemy Case Expression Documentation (SQLAlchemy, 2025)
+URL: https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.case
+Usage:
+Implementing custom sort order for organiser/charity verification lists.
+Conditional SQL expressions inside list views for clearer admin displays.
+Notes: This documentation guided more advanced list-ordering features required for the admin verification dashboard.
+
+====================================================================================
+# VERSION 2 END

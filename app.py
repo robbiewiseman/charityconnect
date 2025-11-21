@@ -1,7 +1,6 @@
 # VERSION 1
 
 # This file creates and configures the main Flask application for CharityConnect.
-import os
 from dotenv import load_dotenv
 from flask import Flask
 from sqlalchemy import text
@@ -10,8 +9,8 @@ from sqlalchemy.engine import make_url
 # Import configuration, database, routes, and extensions
 from config import Config         
 from models import db
-from routes import bp as main_bp, mail
-from extensions import csrf        
+from routes import bp as main_bp
+from extensions import csrf    
 
 def create_app():
     # Load environment variables from the .env file (for keys, database URL, etc.)
@@ -32,7 +31,6 @@ def create_app():
     # Reference: Flask-WTF CSRF integration (Pallets Projects, 2024)
     # https://flask-wtf.readthedocs.io/en/1.2.x/csrf/
     csrf.init_app(app)
-    mail.init_app(app)
 
     # Try to safely display which database the app is connected to (without showing the password)
      # Reference: libpq connection string & safe display of URL (PostgreSQL, 2025)

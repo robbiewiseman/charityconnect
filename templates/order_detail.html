@@ -30,12 +30,41 @@ https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
           <div class="mt-2"><strong>Email:</strong> {{ order.email }}</div>
           <!-- Total paid (calculated from order.total_cents in euros) -->
           <div class="mt-2"><strong>Total:</strong> €{{ '%.2f' % (order.total_cents/100) }}</div>
-        </div>
+          <!-- VERSION 2 START -->
+           {% if order.status == 'PAID' and order.receipt_pdf %}
+            <!-- Order is fully paid and a PDF exists, so show download + verification options -->
+            <div class="mt-3 d-flex flex-wrap gap-2">
+              <a class="btn primary"
+                 href="{{ url_for('main.order_receipt', order_id=order.id) }}">
+                Download receipt (PDF)
+              </a>
+              <a class="btn outline" 
+                 href="{{ url_for('main.order_verify', order_id=order.id) }}">
+                Verify via QR
+              </a>
+            </div>
+          {% elif order.status == 'PAID' %}
+            <!-- Payment succeeded but the background task hasn’t produced the PDF yet -->
+            <div class="flash info mt-3">
+              Receipt is being generated… refresh shortly.
+            </div>
+          {% else %}
+          <!-- Payment hasn’t cleared, so no receipt or verification available -->
+            <div class="flash warning mt-3">
+              Payment pending. If you just paid, refresh in a moment.
+            </div>
+          {% endif %}
+          </div>
+          <!-- Shows the current state of the order (PAID, PENDING, etc.) -->
+          <div class="mt-2">
+            <span class="badge">{{ order.status }}</span>
+          </div>
+          <!-- VERSION 2 END -->
 
         <!-- Navigation: return to event listings -->
         <!-- Reference: Flask url_for (Pallets Projects, 2024)
         https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
-        <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
+        <a class="btn mt-3" href="{{ url_for('main.index') }}">Back to Events</a>
       </div>
     </div>
   </div>

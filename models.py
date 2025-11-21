@@ -8,6 +8,10 @@
 import datetime as dt
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+# VERSION 2 START
+from sqlalchemy import LargeBinary
+from datetime import datetime
+# VERSION 2 END
 
 # Reference: Werkzeug Security Utilities (Pallets Projects, 2024)
 # https://werkzeug.palletsprojects.com/en/stable/utils/#werkzeug.security.generate_password_hash
@@ -38,24 +42,41 @@ class User(UserMixin, db.Model):
     # Reference: Werkzeug password hashing & verification (Pallets Projects, 2024)
     # https://werkzeug.palletsprojects.com/en/stable/utils/#werkzeug.security.generate_password_hash
     # https://werkzeug.palletsprojects.com/en/stable/utils/#werkzeug.security.check_password_hash
-    def set_password(self, raw): self.password_hash = generate_password_hash(raw)
-    def check_password(self, raw): return check_password_hash(self.password_hash, raw)
+    def set_password(self, raw): 
+        self.password_hash = generate_password_hash(raw)
+    def check_password(self, raw): 
+        return check_password_hash(self.password_hash, raw)
 
 # Organiser
 class Organiser(db.Model):
     # Represents an event organiser verified by the platform
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True, nullable=True)
     organisation_name = db.Column(db.String(200))
     charity_number = db.Column(db.String(100))
-    verified = db.Column(db.Boolean, default=False)
+    # VERSION 2 START
+    # store whether they applied as an organiser or a charity
+    org_type = db.Column(db.String(20), nullable=False, default="organiser")
+    # Verification workflow
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    verified = db.Column(db.Boolean, nullable=False, default=False)
+    # Contact details used in the Apply form
+    contact_name = db.Column(db.String(120))
+    contact_email = db.Column(db.String(320))
+    website_url = db.Column(db.String(255))
+    # VERSION 2 END
 
 # Charity
 class Charity(db.Model):
     # Represents registered charities that can receive funds
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(180), nullable=False)
-    regulator_ref = db.Column(db.String(120))
+    # VERSION 2 START
+    charity_number = db.Column(db.String(100))
+    contact_email = db.Column(db.String(255))
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    verified = db.Column(db.Boolean, nullable=False, default=False)
+    # VERSION 2 END
 
 # Event
 class Event(db.Model):
@@ -100,8 +121,12 @@ class Order(db.Model):
     qty = db.Column(db.Integer, default=1)
     donation_cents = db.Column(db.Integer, default=0)
     total_cents = db.Column(db.Integer, default=0)
-    status = db.Column(db.String(32), default='PAID') 
-    created_at = db.Column(db.DateTime, default=dt.datetime.utcnow)
+    # VERSION 2 START
+    status = db.Column(db.String(32), default='PENDING')
+    stripe_payment_intent = db.Column(db.String(100), index=True)
+    receipt_pdf = db.Column(LargeBinary, nullable=True)
+    # VERSION 2 END
+    created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
 
     # Relationships to other tables
     event = db.relationship('Event')

@@ -197,7 +197,7 @@ h3{font-size:1.125rem}
 .space-between{justify-content:space-between}
 .hidden{display:none}
 
-/* ------------------ Page-specific sugar (optional) ------------------ */
+/* ------------------ Page-specific sugar ------------------ */
 /* index: convert simple list to grid when .events-grid is added in template */
 .list-as-grid .card{padding:0; overflow:hidden}
 .list-as-grid .card .event-body{padding:14px}

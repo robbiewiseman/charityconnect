@@ -32,8 +32,11 @@
              style="height:40px; width:auto; border-radius:6px;">
       </a>
 
-      <!-- Always visible link: Event browsing -->
-      <a href="{{ url_for('main.index') }}">Events</a>
+      <!-- VERSION 2 START -->
+      <!-- Primary nav links -->
+      <a href="{{ url_for('main.index') }}">Home</a>
+      <a href="{{ url_for('main.events_list') }}">Events</a>
+      <!-- VERSION 2 END -->
 
       <!-- Conditional navigation link visible only to organisers or admins -->
       <!-- Reference: Jinja if (Pallets Projects, 2024)
@@ -47,6 +50,16 @@
         <a href="{{ url_for('main.admin_verify') }}">Admin</a>
       {% endif %}
     </div>
+
+    <!-- VERSION 2 START -->
+    <!-- Right side: Apply button + role display and switching -->
+    <div class="row" style="gap:8px; align-items:center">
+      <!-- Apply for verification button -->
+      <a class="btn outline" href="{{ url_for('main.apply_verification') }}">
+        Apply for verification
+      </a>
+    <!-- VERSION 2 END -->
+
 
     <!-- Right side: Role display and quick role switching (for demo/testing) -->
     <div class="row" style="gap:6px; align-items:center">

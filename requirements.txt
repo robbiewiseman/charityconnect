@@ -1,4 +1,4 @@
-# VERSION 1
+# VERSION 2
 
 flask
 flask_sqlalchemy
@@ -6,10 +6,12 @@ flask_login
 flask_wtf
 email_validator
 python-dotenv
+flask_mail
+psycopg2-binary
+stripe
 reportlab
 qrcode
 pillow
-flask_mail
-psycopg2-binary
+wtforms-sqlalchemy
 
-# VERSION 1
+# VERSION 2

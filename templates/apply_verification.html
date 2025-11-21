@@ -1,0 +1,49 @@
+<!-- VERSION 2 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card" style="max-width:600px; margin:auto;">
+  <h2 style="margin-top:0">Apply for Verification</h2>
+  <p class="muted">Select your type and provide your organisation details.</p>
+
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+
+    <!-- Type selector -->
+    <label for="{{ form.org_type.id }}">I am applying as</label>
+    {{ form.org_type(class="") }}
+    {% for e in form.org_type.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Organisation Name -->
+    <label for="{{ form.organisation_name.id }}">Organisation Name</label>
+    {{ form.organisation_name(class="", placeholder="e.g. Cork Fundraising Group") }}
+    {% for e in form.organisation_name.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Charity Number -->
+    <label for="{{ form.charity_number.id }}">Charity Number (optional)</label>
+    {{ form.charity_number(class="", placeholder="e.g. 12345") }}
+    {% for e in form.charity_number.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Contact Email -->
+    <label for="{{ form.contact_email.id }}">Contact Email</label>
+    {{ form.contact_email(class="", placeholder="you@example.com") }}
+    {% for e in form.contact_email.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <div class="row" style="justify-content:flex-end; margin-top:16px">
+      {{ form.submit(class="btn primary") }}
+    </div>
+
+  </form>
+</div>
+
+{% endblock %}
+
+<!-- VERSION 2 END -->
