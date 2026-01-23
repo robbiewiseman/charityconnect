@@ -34,6 +34,13 @@ class User(UserMixin, db.Model):
     role = db.Column(db.String(32), default=ROLE_USER, nullable=False)
     name = db.Column(db.String(120))
     created_at = db.Column(db.DateTime, default=dt.datetime.utcnow)
+    # VERSION 3 START
+    marketing_consent = db.Column(db.Boolean, nullable=False, default=False)
+    marketing_consent_at = db.Column(db.DateTime, nullable=True)
+    marketing_consent_withdrawn_at = db.Column(db.DateTime, nullable=True)
+
+    consent_registered_at = db.Column(db.DateTime, nullable=True)
+    # VERSION 3 END
 
     # Relationship: one user can be linked to one organiser profile
     organiser = db.relationship('Organiser', backref='user', uselist=False)
@@ -127,6 +134,11 @@ class Order(db.Model):
     receipt_pdf = db.Column(LargeBinary, nullable=True)
     # VERSION 2 END
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    # VERSION 3 START
+    consent_checkout_at = db.Column(db.DateTime, nullable=True)
+    consent_checkout_ip = db.Column(db.String(64), nullable=True)
+    consent_checkout_ua = db.Column(db.String(255), nullable=True)
+    # VERSION 3 END
 
     # Relationships to other tables
     event = db.relationship('Event')

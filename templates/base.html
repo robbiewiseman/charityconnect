@@ -6,6 +6,7 @@
   <!-- Metadata and page title -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <!-- Reference: Jinja variables (Pallets Projects, 2024)
   https://jinja.palletsprojects.com/en/stable/templates/#variables -->
   <title>{{ title or "CharityConnect" }}</title>
@@ -16,62 +17,92 @@
 </head>
 <body>
 <!-- Header Section -->
-<header>
-  <!-- Wrapper row for logo and navigation links -->
-  <div class="wrap row" style="justify-content:space-between;align-items:center">
-    <!-- Left side: Logo and navigation links -->
-    <div class="row" style="gap:18px; align-items:center">
-      <!-- Clickable CharityConnect logo (returns to homepage) -->
-      <!-- Reference: Flask url_for (Pallets Projects, 2024)
-      https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
-      <a href="{{ url_for('main.index') }}" class="row" style="align-items:center; text-decoration:none;">
-        <!-- Reference: Flask static files via url_for (Pallets Projects, 2024)
-        https://flask.palletsprojects.com/en/stable/quickstart/#static-files -->
-        <img src="{{ url_for('static', filename='images/CharityConnectLogo.jpg') }}" 
-             alt="CharityConnect Logo" 
-             style="height:40px; width:auto; border-radius:6px;">
-      </a>
+<!-- VERSION 3 START -->
+<header class="site-header">
+  <div class="wrap nav-wrap">
 
-      <!-- VERSION 2 START -->
-      <!-- Primary nav links -->
+    <!-- Left side: brand logo and site name linking to homepage -->
+    <a href="{{ url_for('main.index') }}" class="brand" aria-label="CharityConnect home">
+      <img
+        src="{{ url_for('static', filename='images/CharityConnectLogo.jpg') }}"
+        alt="CharityConnect Logo"
+        class="brand-logo"
+      >
+      <span class="brand-name">CharityConnect</span>
+    </a>
+
+    <!-- Mobile navigation toggle (checkbox-based, no JavaScript) -->
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </label>
+
+    <!-- Centre navigation links -->
+    <nav class="nav-links" aria-label="Primary navigation">
+      <!-- Public links -->
       <a href="{{ url_for('main.index') }}">Home</a>
       <a href="{{ url_for('main.events_list') }}">Events</a>
-      <!-- VERSION 2 END -->
 
-      <!-- Conditional navigation link visible only to organisers or admins -->
-      <!-- Reference: Jinja if (Pallets Projects, 2024)
-      https://jinja.palletsprojects.com/en/stable/templates/#if -->
+      <!-- Organiser / admin-only links -->
+      {% if current_role in ['organiser','admin'] %}
+        <a href="{{ url_for('main.organiser_events') }}">My Events</a>
+      {% endif %}
+
       {% if current_role in ['organiser','admin'] %}
         <a href="{{ url_for('main.event_new') }}">New Event</a>
       {% endif %}
 
-      <!-- Admin-only link to the verification dashboard -->
+      <!-- Admin-only dashboard link -->
       {% if current_role == 'admin' %}
         <a href="{{ url_for('main.admin_verify') }}">Admin</a>
       {% endif %}
-    </div>
+    </nav>
 
-    <!-- VERSION 2 START -->
-    <!-- Right side: Apply button + role display and switching -->
-    <div class="row" style="gap:8px; align-items:center">
-      <!-- Apply for verification button -->
+    <!-- Right side actions -->
+    <div class="nav-actions">
+
+      <!-- Apply for organiser/charity verification -->
       <a class="btn outline" href="{{ url_for('main.apply_verification') }}">
-        Apply for verification
+        Apply for Verification
       </a>
-    <!-- VERSION 2 END -->
 
+      {% if current_user.is_authenticated %}
+        <!-- Account dropdown for logged-in users -->
+        <details class="account-menu">
+          <!-- Dropdown trigger showing avatar and user name -->
+          <summary class="btn ghost account-summary">
+            <span class="avatar" aria-hidden="true">
+              {{ (current_user.name or current_user.email or 'U')[:1]|upper }}
+            </span>
+            <span class="account-text">
+              <span class="account-main">{{ current_user.name or current_user.email }}</span>
+              <span class="account-sub">Account</span>
+            </span>
+          </summary>
 
-    <!-- Right side: Role display and quick role switching (for demo/testing) -->
-    <div class="row" style="gap:6px; align-items:center">
-      <!-- Current role shown as badge -->
-      <span class="badge">Role: {{ current_role or 'user' }}</span>
-      <!-- Role switching buttons using session-based route -->
-      <a class="btn outline" href="{{ url_for('main.switch_role', role='user') }}">User</a>
-      <a class="btn outline" href="{{ url_for('main.switch_role', role='organiser') }}">Organiser</a>
-      <a class="btn outline" href="{{ url_for('main.switch_role', role='admin') }}">Admin</a>
-    </div>
+          <!-- Dropdown menu content -->
+          <div class="account-dropdown">
+            <!-- User metadata -->
+            <div class="account-meta">
+              <div class="muted small">Signed in as</div>
+              <div class="account-email">{{ current_user.email }}</div>
+              <div class="badge" style="margin-top:10px;">Role: {{ current_role }}</div>
+            </div>
+
+            <!-- Account management links -->
+            <a class="dropdown-item" href="{{ url_for('main.account') }}">Account settings</a>
+            <a class="dropdown-item danger" href="{{ url_for('main.logout') }}">Logout</a>
+          </div>
+        </details>
+      {% else %}
+        <!-- Login / register buttons for guests -->
+        <a class="btn outline" href="{{ url_for('main.login') }}">Login</a>
+        <a class="btn primary" href="{{ url_for('main.register') }}">Register</a>
+      {% endif %}
+
   </div>
 </header>
+<!-- VERSION 3 END -->
 
 <!-- Main Content Section-->
 <main class="wrap">

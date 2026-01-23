@@ -1,0 +1,156 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page header with title and navigation actions -->
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:12px">
+  <div>
+    <!-- Page title -->
+    <h2 style="margin:0 0 6px">Event Analytics</h2>
+    <!-- Event summary -->
+    <p class="muted" style="margin:0">
+      {{ ev.title }} • {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+    </p>
+  </div>
+  <!-- Action buttons -->
+  <div class="row" style="gap:10px">
+    <a class="btn outline" href="{{ url_for('main.organiser_event_edit', event_id=ev.id) }}">Edit Event</a>
+    <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+  </div>
+</div>
+
+<!-- Key metrics cards -->
+<div class="row" style="gap:16px; flex-wrap:wrap">
+  <!-- Paid orders count -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Paid orders</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">{{ paid_orders_count }}</div>
+  </div>
+
+  <!-- Tickets sold -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Tickets sold</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">{{ tickets_sold }}</div>
+  </div>
+
+  <!-- Total revenue -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Total raised</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">
+      €{{ '%.2f' % (total_raised_cents/100) }}
+    </div>
+  </div>
+
+  <!-- Donation totals and average order -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Donation total</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">
+      €{{ '%.2f' % (donation_total_cents/100) }}
+    </div>
+    <div class="muted" style="margin-top:6px; font-size:.9rem">
+      Avg order: €{{ '%.2f' % (avg_order_cents/100) }}
+    </div>
+  </div>
+</div>
+
+<!-- Beneficiary allocation estimates -->
+<div class="card" style="margin-top:16px">
+  <h3 style="margin:0 0 10px">Estimated beneficiary split</h3>
+
+  {% if allocations %}
+    <!-- List each beneficiary allocation -->
+    <div style="display:flex; flex-direction:column; gap:10px">
+      {% for a in allocations %}
+        <div class="row space-between" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff">
+          <div>
+            <strong>{{ a.charity_name }}</strong>
+            <div class="muted" style="font-size:.9rem">{{ a.percent }}%</div>
+          </div>
+          <div style="text-align:right">
+            <strong>€{{ '%.2f' % (a.estimated_cents/100) }}</strong>
+            <div class="muted" style="font-size:.85rem">estimate</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Message if no beneficiaries are configured -->
+    <p class="muted" style="margin:0">No beneficiaries configured yet.</p>
+  {% endif %}
+</div>
+
+<!-- AI advertising suggestions section -->
+<div class="card" style="margin-top:16px">
+  <div class="row" style="justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+    <div>
+      <h3 style="margin:0 0 4px">Advertising suggestions</h3>
+      <p class="muted" style="margin:0">Generate promotion copy and targeting ideas for this event.</p>
+    </div>
+
+    <!-- Button to trigger AI advertising generation -->
+    <button id="adBtn" class="btn primary" type="button">Suggest advertising</button>
+  </div>
+
+  <!-- Status message shown while AI is generating -->
+  <div id="adStatus" class="muted" style="margin-top:10px; display:none">
+    Generating…
+  </div>
+
+  <!-- Output container for AI-generated advertising text -->
+  <pre id="adOutput" style="white-space:pre-wrap; margin:12px 0 0; display:none"></pre>
+</div>
+
+<script>
+  // Self-invoking function to avoid polluting global scope
+  (function () {
+    // Get references to UI elements
+    const btn = document.getElementById("adBtn");
+    const out = document.getElementById("adOutput");
+    const status = document.getElementById("adStatus");
+
+    // Exit early if button is missing
+    if (!btn) return;
+
+    // Handle click on "Suggest advertising"
+    btn.addEventListener("click", async () => {
+      // Disable button and show loading state
+      btn.disabled = true;
+      out.style.display = "none";
+      status.style.display = "block";
+      status.textContent = "Generating…";
+
+      try {
+        // Call backend AI route for advertising suggestions
+        const res = await fetch("{{ url_for('main.ai_ad_suggestions_for_event', event_id=ev.id) }}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token() }}"
+          },
+          body: JSON.stringify({})
+        });
+
+        // Parse JSON response
+        const data = await res.json();
+
+        // Handle API or AI errors
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "AI request failed");
+        }
+
+        // Show AI output
+        status.style.display = "none";
+        out.textContent = data.text;
+        out.style.display = "block";
+      } catch (err) {
+        // Display error message to the user
+        status.textContent = (err && err.message) ? err.message : "Something went wrong.";
+      } finally {
+        // Re-enable button
+        btn.disabled = false;
+      }
+    });
+  })();
+</script>
+{% endblock %}
+<!-- VERSION 3 END -->

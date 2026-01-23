@@ -54,6 +54,33 @@
           {% for e in form.csrf_token.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
         {% endif %}
 
+        <!-- VERSION 3 START -->
+        <!-- Divider separating consent section from the rest of the form -->
+        <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)">
+
+        <!-- Consent container: checkbox aligned beside explanatory text -->
+        <div class="consent-box">
+          <!-- Consent checkbox field -->
+          {{ form.consent() }}
+
+          <!-- Consent explanation text -->
+          <div>
+            <!-- Main consent statement shown to the user -->
+            <p class="consent-text">
+              I consent to my data being used to process this order and issue my receipt.
+            </p>
+            <!-- Supporting information explaining user rights -->
+            <p class="consent-help">
+              You can withdraw consent later in Account settings.
+            </p>
+            <!-- Display validation errors if consent is not checked -->
+            {% for e in form.consent.errors %}
+              <div class="flash danger">{{ e }}</div>
+            {% endfor %}
+          </div>
+        </div>
+        <!-- VERSION 3 END -->
+
         <!-- Submit + Cancel buttons -->
         <div class="row" style="justify-content:flex-end; gap:10px; margin-top:14px">
           <!-- Cancel returns to event detail page -->

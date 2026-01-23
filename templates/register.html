@@ -1,0 +1,102 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Registration card container -->
+<div class="card" style="max-width:620px; margin:auto;">
+  <h2 style="margin-top:0">Register</h2> <!-- Page title -->
+  <p class="muted" style="margin-top:6px">Create an account. If you register as an organiser, you’ll be set to pending until verified.</p>
+
+  <!-- Registration form -->
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }} <!-- CSRF token + hidden fields -->
+
+    <!-- Name field -->
+    <label for="{{ form.name.id }}">Name</label>
+    {{ form.name(class="", placeholder="Your name") }}
+    {% for e in form.name.errors %}
+      <div class="flash danger">{{ e }}</div> <!-- Name validation errors -->
+    {% endfor %}
+
+    <!-- Email field -->
+    <label for="{{ form.email.id }}">Email</label>
+    {{ form.email(class="", placeholder="you@example.com") }}
+    {% for e in form.email.errors %}
+      <div class="flash danger">{{ e }}</div> <!-- Email validation errors -->
+    {% endfor %}
+
+    <!-- Password + confirm side-by-side -->
+    <div class="row" style="gap:12px; margin-top:8px">
+      <div style="flex:1">
+        <label for="{{ form.password.id }}">Password</label>
+        {{ form.password(class="", placeholder="Minimum 6 characters") }}
+        {% for e in form.password.errors %}
+          <div class="flash danger">{{ e }}</div> <!-- Password validation errors -->
+        {% endfor %}
+      </div>
+
+      <div style="flex:1">
+        <label for="{{ form.confirm.id }}">Confirm</label>
+        {{ form.confirm(class="", placeholder="Repeat password") }}
+        {% for e in form.confirm.errors %}
+          <div class="flash danger">{{ e }}</div> <!-- Confirm validation errors -->
+        {% endfor %}
+      </div>
+    </div>
+
+    <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)"> <!-- Visual separator -->
+
+    <!-- Organiser toggle -->
+    <label class="row" style="gap:10px; align-items:center; margin:0">
+      {{ form.as_organiser() }} <!-- Checkbox -->
+      <span>Register as organiser?</span> <!-- Label text -->
+    </label>
+
+    <!-- Optional organiser details -->
+    <div class="row" style="gap:12px; margin-top:8px">
+      <div style="flex:1">
+        <label for="{{ form.org_name.id }}">Organisation name (optional)</label>
+        {{ form.org_name(class="", placeholder="e.g. Cork Fundraising Group") }} <!-- Org name input -->
+      </div>
+      <div style="flex:1">
+        <label for="{{ form.charity_number.id }}">Charity number (optional)</label>
+        {{ form.charity_number(class="", placeholder="e.g. CHY12345") }} <!-- Charity number input -->
+      </div>
+    </div>
+
+    <!-- CSRF error display (rare, but helpful for debugging) -->
+    {% if form.csrf_token.errors %}
+      {% for e in form.csrf_token.errors %}
+        <div class="flash danger">{{ e }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)"> <!-- Visual separator -->
+
+    <!-- Consent checkbox for terms/privacy -->
+    <label class="row" style="gap:10px; align-items:center; margin:0">
+        {{ form.consent() }} <!-- Consent checkbox -->
+        <span>
+            I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a> <!-- Links (replace # later) -->
+        </span>
+    </label>
+    {% for e in form.consent.errors %}
+        <div class="flash danger">{{ e }}</div> <!-- Consent validation errors -->
+    {% endfor %}
+
+    <!-- Form actions -->
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:16px">
+      <a class="btn" href="{{ url_for('main.index') }}">Cancel</a> <!-- Cancel returns home -->
+      {{ form.submit(class="btn primary") }} <!-- Submit registration -->
+    </div>
+  </form>
+
+  <!-- Link to login -->
+  <div class="muted" style="margin-top:12px; font-size:.95rem">
+    Already registered? <a href="{{ url_for('main.login') }}">Login</a>
+  </div>
+</div>
+
+{% endblock %}
+
+<!-- VERSION 3 END -->

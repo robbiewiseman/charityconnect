@@ -1,4 +1,4 @@
-# VERSION 2
+# VERSION 3
 
 flask
 flask_sqlalchemy
@@ -13,5 +13,7 @@ reportlab
 qrcode
 pillow
 wtforms-sqlalchemy
+openai
+werkzeug
 
-# VERSION 2
+# VERSION 3

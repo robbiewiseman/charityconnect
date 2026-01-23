@@ -172,6 +172,9 @@ Models.py: https://chatgpt.com/share/690dfb57-a0a0-8004-8d11-cfb295a3e904
 # VERSION 2 START 
 receipt builder in routes.py: https://chatgpt.com/share/691d0c58-b260-8004-8756-d6215df38da4
 # VERSION 2 END
+# VERSION 3 START
+JavaScript Logic in event_new.html and organiser_event_analytics.html: https://chatgpt.com/share/69736e29-4d08-8004-a8ff-71f40f533a51
+# VERSION 3 END
 
 ====================================================================================
 # VERSION 1
@@ -232,3 +235,58 @@ Notes: This documentation guided more advanced list-ordering features required f
 
 ====================================================================================
 # VERSION 2 END
+====================================================================================
+
+# VERSION 3 START
+====================================================================================
+
+20. OpenRouter API Documentation (OpenRouter, 2024)
+URLs: 
+https://openrouter.ai/docs
+https://openrouter.ai/docs/api/reference/overview
+https://openrouter.ai/docs/api/api-reference/chat/send-chat-completion-request
+Usage:
+openrouter_client.py: Configuration of an OpenAI-compatible client using OpenRouter’s API endpoint.
+routes.py: Sending structured system and user prompts to large language models for AI-assisted event description generation and advertising suggestions.
+Notes: The OpenRouter documentation was referenced to understand request formatting, authentication using API keys, optional metadata headers, and response structures for chat completions. The API was used as an intermediary to access open-source large language models while maintaining compatibility with the OpenAI Python SDK. All prompt design and integration logic was written independently for the CharityConnect system.
+
+21. OpenAI Python SDK Documentation (OpenAI, 2024)
+URLs:
+https://platform.openai.com/docs/api-reference/chat
+https://platform.openai.com/docs/api-reference/chat/object
+Usage:
+openrouter_client.py: Use of the OpenAI client class and chat.completions.create() method to send messages and retrieve generated text.
+Error handling logic adapted to support both attribute-based and dictionary-based SDK responses.
+Notes: The OpenAI Python SDK documentation informed the structure of chat completion requests and response handling. Although the SDK is used, requests are routed through OpenRouter rather than OpenAI’s hosted models. The SDK was selected to reduce boilerplate and maintain a clean abstraction between application routes and AI provider logic.
+
+22. Prompt Engineering Concepts (OpenAI, 2024)
+URL: https://platform.openai.com/docs/guides/prompt-engineering
+Usage:
+routes.py: Construction of system and user prompts to constrain AI output, enforce tone (Irish/UK English), prevent fabricated claims, and require structured responses.
+Notes: Prompt engineering guidance informed how instructions were framed for both event description generation and advertising suggestions. Prompts were designed to ensure factual, trustworthy, and reviewable output suitable for charity fundraising contexts. Final prompts were authored specifically for CharityConnect.
+
+23. Flask-Login Documentation (Pallets Projects, 2026)
+URLs:
+https://flask-login.readthedocs.io/en/latest/
+https://flask-login.readthedocs.io/en/latest/#login-example
+Usage:
+routes.py:
+User authentication flows using login_user() and logout_user()
+Session-based access control using @login_required
+Redirecting users to their originally requested page via the next parameter
+Managing logged-in user state during registration, login, and logout
+Notes: The Flask-Login documentation informed the implementation of session-based authentication and access control within CharityConnect. Standard login and logout patterns were followed to manage user sessions securely, enforce protected routes, and maintain consistent authentication behaviour across organiser, admin, and user accounts. All authentication logic was implemented independently in accordance with Flask-Login’s official guidance.
+
+24. Flask Request Object – JSON Parsing (Pallets Projects, 2024)
+URL: https://flask.palletsprojects.com/en/stable/api/#flask.Request.get_json
+Usage:
+routes.py: Use of request.get_json(silent=True) to safely parse JSON payloads sent from the browser to AI-related Flask routes, avoiding exceptions when no JSON body is present.
+Notes: This documentation was referenced to correctly handle JSON request bodies in Flask routes that receive asynchronous POST requests from client-side JavaScript. The silent=True option was used to ensure graceful failure and predictable request handling.
+
+25. Flask Configuration System (Pallets Projects, 2024)
+URL: https://flask.palletsprojects.com/en/stable/config/
+Usage:
+openrouter_client.py: Accessing configuration values via current_app.config to retrieve API keys, model identifiers, and site metadata.
+config.py: Centralised configuration of environment variables for external services and application settings.
+Notes: The Flask configuration documentation informed how environment-specific values are loaded and accessed safely within application code, supporting clean separation between configuration and logic.
+

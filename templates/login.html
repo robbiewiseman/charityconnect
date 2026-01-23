@@ -1,0 +1,56 @@
+<!-- VERSION 3 START -->
+ {% extends "base.html" %}
+{% block content %}
+
+<!-- Card container to centre the login form -->
+<div class="card" style="max-width:520px; margin:auto;">
+  <!-- Page heading -->
+  <h2 style="margin-top:0">Login</h2>
+  <!-- Short description under the heading -->
+  <p class="muted" style="margin-top:6px">Log in to access organiser and admin features.</p>
+
+  <!-- Login form -->
+  <form method="post" novalidate>
+    <!-- Hidden fields (CSRF token, etc.) -->
+    {{ form.hidden_tag() }}
+
+    <!-- Email input -->
+    <label for="{{ form.email.id }}">Email</label>
+    {{ form.email(class="", placeholder="you@example.com") }}
+    <!-- Email validation errors -->
+    {% for e in form.email.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Password input -->
+    <label for="{{ form.password.id }}">Password</label>
+    {{ form.password(class="", placeholder="Your password") }}
+    <!-- Password validation errors -->
+    {% for e in form.password.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- CSRF validation errors (if any) -->
+    {% if form.csrf_token.errors %}
+      {% for e in form.csrf_token.errors %}
+        <div class="flash danger">{{ e }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Form action buttons -->
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:16px">
+      <!-- Cancel and return to homepage -->
+      <a class="btn" href="{{ url_for('main.index') }}">Cancel</a>
+      <!-- Submit button -->
+      {{ form.submit(class="btn primary") }}
+    </div>
+  </form>
+
+  <!-- Link to registration page -->
+  <div class="muted" style="margin-top:12px; font-size:.95rem">
+    No account yet? <a href="{{ url_for('main.register') }}">Register</a>
+  </div>
+</div>
+
+{% endblock %}
+<!-- VERSION 3 END>

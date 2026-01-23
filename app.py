@@ -8,9 +8,11 @@ from sqlalchemy.engine import make_url
 
 # Import configuration, database, routes, and extensions
 from config import Config         
-from models import db
 from routes import bp as main_bp
-from extensions import csrf    
+# VERSION 3 START
+from extensions import csrf, login_manager
+from models import db, User
+# VERSION 3 END
 
 def create_app():
     # Load environment variables from the .env file (for keys, database URL, etc.)
@@ -31,6 +33,14 @@ def create_app():
     # Reference: Flask-WTF CSRF integration (Pallets Projects, 2024)
     # https://flask-wtf.readthedocs.io/en/1.2.x/csrf/
     csrf.init_app(app)
+
+    # VERSION 3 START
+    login_manager.init_app(app)
+
+    @login_manager.user_loader
+    def load_user(user_id):
+        return User.query.get(int(user_id))
+    # VERSION 3 END
 
     # Try to safely display which database the app is connected to (without showing the password)
      # Reference: libpq connection string & safe display of URL (PostgreSQL, 2025)

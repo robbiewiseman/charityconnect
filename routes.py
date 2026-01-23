@@ -17,11 +17,16 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.enums import TA_LEFT
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.platypus import Paragraph
-from sqlalchemy import case
 from sqlalchemy.exc import OperationalError
 from extensions import csrf
 from config import Config
-from forms import PurchaseForm, ApplyVerificationForm, EventForm
+# VERSION 3 START
+from sqlalchemy import case, func
+from forms import PurchaseForm, ApplyVerificationForm, EventForm, RegisterForm, LoginForm, AccountForm
+from flask_login import login_user, logout_user, login_required, current_user
+from datetime import datetime
+from openrouter_client import chat, OpenRouterError
+# VERSION 3 END
 # VERSION 2 END
 
 from models import (db, User, Organiser, Charity, Event, EventBeneficiary, Order, Ticket, ROLE_USER, ROLE_ORG, ROLE_ADMIN)
@@ -231,10 +236,10 @@ def finalise_order(order):
 # VERSION 2 END
 
 # Role System
-
 # Simple session-based role control (user,organiser,admin)
 def get_role():
-    # Get the current user's role from the session (default: user)
+    if current_user.is_authenticated:
+        return current_user.role
     return session.get("role", ROLE_USER)
 
 def set_role(role):
@@ -252,6 +257,112 @@ def require_role(*roles):
         return redirect(url_for("main.index"))
     return None
 
+# VERSION 3 START
+
+# Reference: Flask-Login user session management (Flask-Login, 2026)
+# https://flask-login.readthedocs.io/en/latest/
+# Used here for: login_user(), logout_user(), @login_required, and loading the logged-in user from a stored ID.
+
+def get_current_user():
+    # Get the logged-in user ID from the session
+    uid = session.get("user_id")
+    # If no user is logged in, return None
+    if not uid:
+        return None
+    return User.query.get(uid)
+
+@bp.route("/register", methods=["GET", "POST"])
+def register():
+    # Create the registration form
+    form = RegisterForm()
+    # Handle form submission
+    if form.validate_on_submit():
+        # Normalise email input
+        email = form.email.data.lower().strip()
+
+        # Prevent duplicate registrations
+        if User.query.filter_by(email=email).first():
+            flash("That email is already registered. Please log in.", "warning")
+            return redirect(url_for("main.login"))
+
+        # Decide role based on organiser checkbox
+        role = ROLE_ORG if form.as_organiser.data else ROLE_USER
+
+        # Create the user record
+        user = User(email=email, name=form.name.data.strip(), role=role)
+
+        user.set_password(form.password.data)
+        # Record consent timestamp at registration
+        user.consent_registered_at = datetime.utcnow()
+        db.session.add(user)
+        db.session.flush()
+
+        # If registering as organiser, create organiser profile
+        if form.as_organiser.data:
+            org = Organiser(
+                user_id=user.id,
+                organisation_name=(form.org_name.data or "").strip(),
+                charity_number=(form.charity_number.data or "").strip() or None,
+                org_type="organiser",
+                status="pending",
+                verified=False,
+                contact_name=user.name,
+                contact_email=user.email,
+            )
+            db.session.add(org)
+
+        # Save everything to the database
+        db.session.commit()
+
+        # Reference: Flask-Login logging a user in (Flask-Login, 2026)
+        # https://flask-login.readthedocs.io/en/latest/#login-example
+        # Log the user in immediately
+        login_user(user)
+        flash("Account created. You are now logged in.", "success")
+        return redirect(url_for("main.index"))
+    # Show registration page
+    return render_template("register.html", form=form)
+
+@bp.route("/login", methods=["GET", "POST"])
+def login():
+    # Create the login form
+    form = LoginForm()
+    # Handle form submission
+    if form.validate_on_submit():
+        # Normalise email input
+        email = form.email.data.lower().strip()
+        # Look up the user
+        user = User.query.filter_by(email=email).first()
+
+        # Reject invalid credentials
+        if not user or not user.check_password(form.password.data):
+            flash("Invalid email or password.", "danger")
+            return render_template("login.html", form=form)
+
+        # Log the user in
+        login_user(user)
+        flash("Logged in successfully.", "success")
+        # Redirect to original page if present
+        next_url = request.args.get("next")
+        return redirect(next_url or url_for("main.index"))
+    # Show login page
+    return render_template("login.html", form=form)
+
+@bp.route("/logout")
+# Reference: Flask-Login protecting routes (Flask-Login, 2026) 
+# https://flask-login.readthedocs.io/en/latest/
+@login_required
+def logout():
+    # Reference: Flask-Login logging a user out (Flask-Login, 2026)
+    # https://flask-login.readthedocs.io/en/latest/#login-example
+    # End the user session
+    logout_user()
+    # Inform the user
+    flash("You have been logged out.", "info")
+    # Redirect to homepage
+    return redirect(url_for("main.index"))
+# VERSION 3 END
+
 # VERSION 2 START
 # Reference: Flask context processors – injecting variables into templates (Pallets Projects, 2025)
 # https://flask.palletsprojects.com/en/stable/templating/#context-processors
@@ -268,7 +379,10 @@ def cents(eur_decimal):
 # Role switching
 @bp.route("/role/<role>")
 def switch_role(role):
-    # Allows easy switching between roles for testing/admin purposes
+    # VERSION 3 START
+    if not current_app.debug:
+        abort(404)
+    # VERSION 3 END
     set_role(role)
     flash(f"Role switched to: {get_role()}", "info")
     return redirect(url_for("main.index"))
@@ -368,6 +482,15 @@ def event_buy(event_id):
             status="PENDING",
             # VERSION 2 END
         )
+        # VERSION 3 START
+        # Record when consent was captured at checkout
+        order.consent_checkout_at = datetime.utcnow()
+        # Store the IP address for audit (uses X-Forwarded-For if behind a proxy)
+        order.consent_checkout_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        # Store the browser/device user-agent (trimmed to fit DB column length)
+        order.consent_checkout_ua = request.headers.get("User-Agent", "")[:255]
+        # VERSION 3 END
+
         db.session.add(order)
         db.session.flush()
 
@@ -587,8 +710,65 @@ def order_receipt(order_id):
     )
 # VERSION 2 END
 
+# VERSION 3 START
+@bp.route("/account", methods=["GET", "POST"])
+@login_required
+def account():
+    # Initialise the account update form
+    form = AccountForm()
+
+    if request.method == "GET":
+        # Pre-fill the form with the current user's details
+        form.name.data = current_user.name or ""
+        form.email.data = current_user.email or ""
+        # Convert stored value to reminder boolean for the checkbox
+        form.marketing_consent.data = bool(getattr(current_user, "marketing_consent", False))
+
+    if form.validate_on_submit():
+        # Normalise the new email address
+        new_email = form.email.data.strip().lower()
+        # Check the email is not already used by another account
+        existing = User.query.filter(User.email == new_email, User.id != current_user.id).first()
+        if existing:
+            flash("That email is already in use.", "danger")
+            return render_template("account.html", form=form)
+
+        # Update basic account details
+        current_user.name = form.name.data.strip()
+        current_user.email = new_email
+
+        # Handle marketing consent changes with audit trail
+        previous = bool(getattr(current_user, "marketing_consent", False))
+        new_value = bool(form.marketing_consent.data)
+
+        if new_value != previous:
+            current_user.marketing_consent = new_value
+            if new_value:
+                # Record when consent was given
+                current_user.marketing_consent_at = datetime.utcnow()
+            else:
+                # Record when consent was withdrawn
+                current_user.marketing_consent_withdrawn_at = datetime.utcnow()
+
+        # Save changes to the database
+        db.session.commit()
+        flash("Account updated.", "success")
+        return redirect(url_for("main.account"))
+
+    if request.method == "POST":
+        # Surface any form validation errors to the user
+        for field, msgs in form.errors.items():
+            for m in msgs:
+                flash(f"{field}: {m}", "danger")
+    # Render the account page
+    return render_template("account.html", form=form)
+# VERSION 3 END
+
 # Admin Routes
 @bp.route("/admin/verify")
+# VERSION 3 START
+@login_required
+# VERSION 3 END
 def admin_verify():
     guard = require_role(ROLE_ADMIN)
     if guard:
@@ -621,6 +801,9 @@ def admin_verify():
 # https://flask-wtf.readthedocs.io/en/1.2.x/csrf/
 @csrf.exempt  # CSRF disabled for simplicity in admin toggle (use with care)
 # VERSION 2 START
+# VERSION 3 START
+@login_required
+# VERSION 3 END
 def admin_verify_action(org_id):
     # Only admins can perform verification actions
     guard = require_role(ROLE_ADMIN)
@@ -661,6 +844,9 @@ def admin_verify_action(org_id):
     return redirect(url_for("main.admin_verify"))
 
 @bp.route("/admin/verify/charity/<int:charity_id>", methods=["POST"])
+# VERSION 3 START
+@login_required
+# VERSION 3 END
 def admin_verify_charity_action(charity_id):
     # Only admins can perform verification actions
     guard = require_role(ROLE_ADMIN)
@@ -699,7 +885,169 @@ def admin_verify_charity_action(charity_id):
 # VERSION 2 END
 
 # Organiser Routes
+
+# VERSION 3 START
+
+# Helper to ensure only organisers or admins can access AI features
+def _ai_guard():
+    # Check if current user has organiser or admin role
+    guard = require_role(ROLE_ORG, ROLE_ADMIN)
+    if guard:
+        return guard
+    return None
+
+# AI route to suggest an event description
+@bp.route("/ai/event-description", methods=["POST"])
+@login_required
+@csrf.exempt
+def ai_event_description():
+    # Block access if user is not organiser/admin
+    g = _ai_guard()
+    if g:
+        return g
+
+    # Reference: Flask Request.get_json() for parsing JSON request bodies (Pallets Projects, 2024)
+    # https://flask.palletsprojects.com/en/stable/api/#flask.Request.get_json
+    data = request.get_json(silent=True) or {}
+    # Extract event details
+    title = (data.get("title") or "").strip()
+    venue = (data.get("venue") or "").strip()
+    starts_at = (data.get("starts_at") or "").strip()
+    ticket_price = (data.get("ticket_price") or "").strip()
+    beneficiaries = data.get("beneficiaries") or []
+
+    # Title is mandatory for generating a description
+    if not title:
+        return {"ok": False, "error": "Title is required."}, 400
+
+    # Build beneficiary summary line for the AI prompt
+    ben_line = ""
+    parts = []
+    for b in beneficiaries[:5]:
+        name = (b.get("name") or "").strip()
+        pct = b.get("pct")
+        if name:
+            parts.append(f"{name} ({pct}%)" if pct is not None else name)
+    if parts:
+        ben_line = "Beneficiaries: " + ", ".join(parts)
+
+    # Prompt structure (system + user) to control tone and prevent fabricated claims
+    # Reference: Prompt engineering guidance (OpenAI, 2024)
+    # https://platform.openai.com/docs/guides/prompt-engineering
+    # Messages sent to OpenRouter model
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "Write a clear, trustworthy charity event description for a ticketing website. "
+                "No made-up facts or stats. Use Irish/UK English. Return only the description text."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Write 90–140 words for this event:\n"
+                f"Title: {title}\n"
+                f"Venue: {venue or 'TBC'}\n"
+                f"Start: {starts_at or 'TBC'}\n"
+                f"Ticket price: {ticket_price or 'TBC'}\n"
+                f"{ben_line}\n\n"
+                "Include what attendees can expect, who it supports, and a call to action."
+            ),
+        },
+    ]
+
+    # Call OpenRouter and return generated description
+    try:
+        # Send chat-completions style request via OpenRouter using an OpenAI-compatible client
+        # Reference: OpenRouter API documentation – OpenAI-compatible chat completions (OpenRouter, 2024)
+        # https://openrouter.ai/docs
+        text = chat(messages, temperature=0.7, max_tokens=220)
+        return {"ok": True, "text": text.strip()}
+    except OpenRouterError as e:
+        return {"ok": False, "error": str(e)}, 502
+
+# AI route to generate advertising suggestions for a specific event
+@bp.route("/ai/ad-suggestions/<int:event_id>", methods=["POST"])
+@login_required
+@csrf.exempt
+def ai_ad_suggestions_for_event(event_id):
+    # Ensure user is organiser or admin
+    guard = require_role(ROLE_ORG, ROLE_ADMIN)
+    if guard:
+        return guard
+
+    # Load event and enforce ownership
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+
+    # Collect beneficiary data for the prompt
+    beneficiaries = []
+    for b in ev.beneficiaries:
+        beneficiaries.append({"name": b.charity.name, "pct": b.allocation_percent})
+
+    # Build beneficiary summary
+    ben_names = [b["name"] for b in beneficiaries]
+    ben_line = ", ".join(ben_names[:5]) if ben_names else "selected charities"
+
+    # Messages sent to OpenRouter model
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "You are a practical marketing assistant for a local Irish charity event. "
+                "No fake partnerships, no inflated claims. Return structured bullet points."
+            ),
+        },
+        {
+            "role": "user",
+            "content": (
+                f"Create an advertising plan for:\n"
+                f"Title: {ev.title}\n"
+                f"Venue: {ev.venue or 'TBC'}\n"
+                f"Start: {ev.starts_at.strftime('%Y-%m-%d %H:%M') if ev.starts_at else 'TBC'}\n"
+                f"Ticket price: €{ev.ticket_price_cents/100:.2f}\n"
+                f"Beneficiaries: {ben_line}\n\n"
+                "Return:\n"
+                "1) 3 audience segments (who, why they care)\n"
+                "2) 5 best channels for Cork/Ireland with a tactic each\n"
+                "3) 2 Instagram captions, 2 Facebook posts, 1 email subject + short body\n"
+                "4) 10 hashtag ideas"
+            ),
+        },
+    ]
+
+    # Call OpenRouter and return advertising suggestions
+    try:
+        text = chat(messages, temperature=0.6, max_tokens=650)
+        return {"ok": True, "text": text.strip()}
+    except OpenRouterError as e:
+        return {"ok": False, "error": str(e)}, 502
+
+# Fetch organiser profile for the logged-in user
+def _get_current_organiser_or_redirect():
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    if not org:
+        flash("Your organiser account is not linked to an organiser profile.", "danger")
+        return None
+    return org
+
+# Fetch an event and ensure it belongs to the logged-in organiser
+def _get_event_for_current_organiser_or_404(event_id):
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    if not org:
+        abort(403)
+    ev = Event.query.get_or_404(event_id)
+    # Prevent access to events owned by other organisers
+    if ev.organiser_id != org.id:
+        abort(403)
+    return ev, org
+
+# VERSION 3 END
+
 @bp.route("/organiser/events/new", methods=["GET","POST"])
+# VERSION 3 START
+@login_required
+# VERSION 3 END
 def event_new():
     guard = require_role(ROLE_ORG, ROLE_ADMIN)
     if guard:
@@ -711,9 +1059,6 @@ def event_new():
     # Only verified charities appear as options
     verified_charities = (Charity.query.filter_by(verified=True).order_by(Charity.name.asc()).all())
     charity_choices = [(c.id, f"{c.name}") for c in verified_charities]
-    if not charity_choices:
-        flash("No verified charities are available yet. Ask an admin to verify at least one charity.", "info")
-
     # Apply choices to every beneficiary subform in the FieldList
     for b in form.beneficiaries:
         b.charity_id.choices = charity_choices
@@ -730,21 +1075,18 @@ def event_new():
 
     # Save event (full validation and 100% rule)
     if form.validate_on_submit():
-        total_alloc = sum(
-            b.allocation_percent.data or 0
-            for b in form.beneficiaries
-        )
+        total_alloc = sum(b.allocation_percent.data or 0 for b in form.beneficiaries)
         if total_alloc != 100:
             flash("Allocation must total 100%.", "danger")
             return render_template("event_new.html", form=form)
     # VERSION 2 END
 
         # Fallback organiser (for if none exist)
-        org = Organiser.query.first()
+        # VERSION 3 START
+        org = Organiser.query.filter_by(user_id=current_user.id).first()
         if not org:
-            org = Organiser(organisation_name="Fallback Organiser", charity_number="FBACK-000", verified=True)
-            db.session.add(org)
-            db.session.flush()
+            flash("Your organiser account is not linked to an organiser profile.", "danger")
+            return redirect(url_for("main.index"))
 
         # Create event record
         ev = Event(
@@ -772,7 +1114,8 @@ def event_new():
         # https://docs.sqlalchemy.org/en/20/orm/session_basics.html
         db.session.commit()
         flash("Event saved.", "success")
-        return redirect(url_for('main.event_detail', event_id=ev.id))
+        return redirect(url_for("main.organiser_events"))
+        # VERSION 3 END
 
     # Handle form validation errors
     if request.method == "POST":
@@ -781,5 +1124,173 @@ def event_new():
                 flash(f"{field}: {m}", "danger")
 
     return render_template("event_new.html", form=form)
+
+# VERSION 3 START
+# Show all events created by the logged-in organiser
+@bp.route("/organiser/events")
+def organiser_events():
+    # Restrict access to organisers only
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+    
+    # Restrict access to organisers only
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    if not org:
+        flash("No organiser profile linked to your account.", "warning")
+        return redirect(url_for("main.index"))
+
+    # Fetch only events created by this organiser
+    events = (
+        Event.query
+        .filter_by(organiser_id=org.id)
+        .order_by(Event.created_at.desc())
+        .all()
+    )
+    # Render organiser events page
+    return render_template("organiser_events.html", events=events, org=org)
+
+# Edit an existing event owned by the organiser
+@bp.route("/organiser/events/<int:event_id>/edit", methods=["GET", "POST"])
+def organiser_event_edit(event_id):
+    # Restrict access to organisers only
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+
+    # Fetch event and verify organiser ownership
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+    # Initialise the event form
+    form = EventForm()
+
+    # Fetch only verified charities for beneficiary selection
+    verified_charities = Charity.query.filter_by(verified=True).order_by(Charity.name.asc()).all()
+    charity_choices = [(c.id, c.name) for c in verified_charities]
+
+    # Populate form fields when loading the page
+    if request.method == "GET":
+        form.title.data = ev.title
+        form.description.data = ev.description
+        form.venue.data = ev.venue
+        form.starts_at.data = ev.starts_at
+        form.ticket_price_eur.data = (ev.ticket_price_cents or 0) / 100
+        form.published.data = bool(ev.published)
+
+        # Reset beneficiary entries
+        form.beneficiaries.entries = []
+        form.beneficiaries.min_entries = 0
+
+        # Populate beneficiaries from existing event data
+        existing = ev.beneficiaries or []
+        if not existing:
+            form.beneficiaries.append_entry()
+        else:
+            for b in existing:
+                entry = form.beneficiaries.append_entry()
+                entry.form.charity_id.data = b.charity_id
+                entry.form.allocation_percent.data = b.allocation_percent
+    
+    # Apply charity choices to each beneficiary row
+    for b in form.beneficiaries:
+        b.form.charity_id.choices = charity_choices
+
+    # Add a new beneficiary row without saving the form
+    if request.method == "POST" and "add_beneficiary" in request.form:
+        form.beneficiaries.append_entry()
+        for b in form.beneficiaries:
+            b.form.charity_id.choices = charity_choices
+        return render_template("organiser_event_edit.html", form=form, ev=ev)
+
+    # Save changes when form is submitted
+    if form.validate_on_submit():
+        # Ensure beneficiary allocations total 100%
+        total_alloc = sum((b.form.allocation_percent.data or 0) for b in form.beneficiaries)
+        if total_alloc != 100:
+            flash("Allocation must total 100%.", "danger")
+            return render_template("organiser_event_edit.html", form=form, ev=ev)
+
+        # Update event fields
+        ev.title = form.title.data.strip()
+        ev.description = form.description.data.strip() if form.description.data else ""
+        ev.venue = form.venue.data.strip() if form.venue.data else ""
+        ev.starts_at = form.starts_at.data
+        ev.ticket_price_cents = cents(form.ticket_price_eur.data)
+        ev.published = bool(form.published.data)
+
+        # Remove existing beneficiaries
+        EventBeneficiary.query.filter_by(event_id=ev.id).delete()
+        db.session.flush()
+
+        # Add updated beneficiaries
+        for b in form.beneficiaries:
+            db.session.add(EventBeneficiary(
+                event_id=ev.id,
+                charity_id=b.form.charity_id.data,
+                allocation_percent=b.form.allocation_percent.data
+            ))
+
+        # Save changes to the database
+        db.session.commit()
+        flash("Event updated.", "success")
+        return redirect(url_for("main.organiser_events"))
+
+    # Display validation errors
+    if request.method == "POST":
+        for field, msgs in form.errors.items():
+            for m in msgs:
+                flash(f"{field}: {m}", "danger")
+    # Render edit page
+    return render_template("organiser_event_edit.html", form=form, ev=ev)
+
+# Show analytics for a specific organiser-owned event
+@bp.route("/organiser/events/<int:event_id>/analytics")
+@login_required
+def organiser_event_analytics(event_id):
+    # Restrict access to organisers only
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+
+    # Fetch event and verify organiser ownership
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+
+    # Query only paid orders for this event
+    paid_orders_q = Order.query.filter_by(event_id=ev.id, status="PAID")
+    # Count number of paid orders
+    paid_orders_count = paid_orders_q.count()
+    # Calculate totals using SQL aggregation
+    totals = paid_orders_q.with_entities(
+        func.coalesce(func.sum(Order.qty), 0),
+        func.coalesce(func.sum(Order.total_cents), 0),
+        func.coalesce(func.sum(Order.donation_cents), 0),
+    ).first()
+    # Extract totals
+    tickets_sold = int(totals[0] or 0)
+    total_raised_cents = int(totals[1] or 0)
+    donation_total_cents = int(totals[2] or 0)
+    # Calculate average order value
+    avg_order_cents = int(total_raised_cents / paid_orders_count) if paid_orders_count else 0
+
+    # Estimate beneficiary allocations based on percentages
+    allocations = []
+    for b in ev.beneficiaries:
+        allocations.append({
+            "charity_name": b.charity.name if b.charity else "Unknown charity",
+            "percent": b.allocation_percent,
+            "estimated_cents": int(round((total_raised_cents * (b.allocation_percent or 0)) / 100)),
+        })
+    # Render analytics page
+    return render_template(
+        "organiser_event_analytics.html",
+        ev=ev,
+        paid_orders_count=paid_orders_count,
+        tickets_sold=tickets_sold,
+        total_raised_cents=total_raised_cents,
+        donation_total_cents=donation_total_cents,
+        avg_order_cents=avg_order_cents,
+        allocations=allocations,
+    )
+
+# VERSION 3 END
 
 # VERSION 1

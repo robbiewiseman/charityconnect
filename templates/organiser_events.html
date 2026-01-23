@@ -1,0 +1,70 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page header: title + short description + quick actions -->
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:12px">
+  <div>
+    <h2 style="margin:0 0 6px">My Events</h2> <!-- Page title -->
+    <p class="muted" style="margin:0">
+      Events published by {{ org.organisation_name or "your organiser account" }}. <!-- Shows organiser name -->
+    </p>
+  </div>
+  <!-- Action buttons -->
+  <div class="row" style="gap:10px">
+    <a class="btn outline" href="{{ url_for('main.event_new') }}">Create new event</a> <!-- Go to create event -->
+    <a class="btn" href="{{ url_for('main.events_list') }}">View public events</a> <!-- Go to public listing -->
+  </div>
+</div>
+
+{% if events %} <!-- If the organiser has events, show the grid -->
+  <div class="events-grid"> <!-- Responsive grid container -->
+    {% for ev in events %} <!-- Loop through the organiser's events -->
+      <div class="card event-card" style="position:relative"> <!-- Event card container -->
+        <div class="event-media"></div> <!-- Decorative banner area -->
+        <div class="event-body"> <!-- Main card content -->
+
+          <!-- Title + price badge -->
+          <div class="row space-between" style="align-items:flex-start">
+            <h3 class="event-title" style="margin:0">{{ ev.title }}</h3> <!-- Event title -->
+            <span class="badge" style="font-weight:700">
+              €{{ '%.2f' % (ev.ticket_price_cents/100) }} <!-- Ticket price -->
+            </span>
+          </div>
+
+          <!-- Date/time + venue -->
+          <div class="event-meta">
+            {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }} <!-- Event schedule -->
+          </div>
+
+          <!-- Published status -->
+          <div class="row" style="gap:8px; margin-top:10px; align-items:center">
+            {% if ev.published %}
+              <span class="badge verified">Published</span> <!-- Visible to public -->
+            {% else %}
+              <span class="badge">Draft</span> <!-- Not public yet -->
+            {% endif %}
+          </div>
+
+          <!-- Card actions -->
+          <div class="event-actions" style="margin-top:12px">
+            <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">View</a> <!-- View event page -->
+            <a class="btn outline" href="{{ url_for('main.organiser_event_edit', event_id=ev.id) }}">Edit</a> <!-- Edit form -->
+            <a class="btn primary" href="{{ url_for('main.organiser_event_analytics', event_id=ev.id) }}">Analytics</a> <!-- Analytics page -->
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %} <!-- If no events exist, show an empty state -->
+  <div class="card">
+    <p class="muted" style="margin:0">You haven’t created any events yet.</p> <!-- Empty message -->
+    <div style="margin-top:12px">
+      <a class="btn primary" href="{{ url_for('main.event_new') }}">Create your first event</a> <!-- CTA to create -->
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+<!-- VERSION 3 END -->
