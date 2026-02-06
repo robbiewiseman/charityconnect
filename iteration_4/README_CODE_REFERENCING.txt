@@ -337,7 +337,9 @@ routes.py:
 Notes: Flask’s Response API was referenced to correctly construct non-HTML responses and deliver generated files securely to administrators.
 
 30. Gmail SMTP Configuration and TLS Requirements (Google, 2024)
-URL: https://support.google.com/mail/answer/7126229
+URLs: 
+https://support.google.com/mail/answer/7126229
+https://seatable.com/help/setup-gmail-smtp-email-seatable/
 Usage:
 .env configuration:
 - SMTP host and port configuration (smtp.gmail.com, port 587).

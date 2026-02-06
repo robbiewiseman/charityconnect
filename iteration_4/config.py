@@ -48,6 +48,7 @@ class Config:
     # VERSION 4 START
     # Reference: Gmail SMTP settings and TLS configuration (Google, 2024)
     # https://support.google.com/mail/answer/7126229
+    # https://seatable.com/help/setup-gmail-smtp-email-seatable/
     # Email (SMTP) config
     MAIL_SERVER = os.getenv("MAIL_HOST", "smtp.gmail.com")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
