@@ -1,0 +1,77 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+
+<!-- Card container to centre the account form and limit width -->
+<div class="card" style="max-width:640px; margin:auto;">
+  <!-- Page heading -->
+  <h2 style="margin-top:0">My account</h2>
+  <!-- Short description under the heading -->
+  <p class="muted" style="margin-top:-6px">
+    Update your details and manage your privacy settings.
+  </p>
+
+  <!-- Account update form -->
+  <form method="post" novalidate>
+    <!-- Hidden fields required by Flask-WTF (e.g. CSRF token) -->
+    {{ form.hidden_tag() }}
+
+    <!-- Section heading for personal details -->
+    <h3 style="margin:14px 0 8px">Account details</h3>
+
+    <!-- Name input field -->
+    <label for="{{ form.name.id }}">Name</label>
+    {{ form.name(class="") }}
+    <!-- Display validation errors for name -->
+    {% for e in form.name.errors %}<div class="flash danger">{{ e }}</div>{% endfor %}
+
+    <!-- Email input field -->
+    <label for="{{ form.email.id }}">Email</label>
+    {{ form.email(class="") }}
+    <!-- Display validation errors for email -->
+    {% for e in form.email.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Divider between account details and privacy settings -->
+    <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)">
+
+    <!-- Section heading for privacy controls -->
+    <h3 style="margin:0 0 8px">Privacy</h3>
+
+    <!-- Marketing consent checkbox with label beside it -->
+    <label class="row" style="gap:10px; align-items:center; margin:0">
+      {{ form.marketing_consent() }}
+      <span>{{ form.marketing_consent.label.text }}</span>
+    </label>
+
+    <!-- Display current consent status and relevant timestamps -->
+    <div class="muted" style="font-size:.9rem; margin-top:10px">
+      {% if current_user.marketing_consent %}
+        Status: <strong>Consented</strong>
+        {% if current_user.marketing_consent_at %}
+          <!-- User has given consent -->
+          (since {{ current_user.marketing_consent_at.strftime('%Y-%m-%d %H:%M') }})
+        {% endif %}
+      {% else %}
+        <!-- User has not given consent or has withdrawn it -->
+        Status: <strong>Not consented</strong>
+        {% if current_user.marketing_consent_withdrawn_at %}
+          (withdrawn {{ current_user.marketing_consent_withdrawn_at.strftime('%Y-%m-%d %H:%M') }})
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <!-- Form action buttons -->
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:16px">
+      <!-- Back to homepage without saving -->
+      <a class="btn" href="{{ url_for('main.index') }}">Back</a>
+      <!-- Submit button to save account changes -->
+      {{ form.submit(class="btn primary") }}
+    </div>
+  </form>
+</div>
+
+{% endblock %}
+<!-- VERSION 3 END -->

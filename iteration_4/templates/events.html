@@ -1,0 +1,63 @@
+<!-- Version 2 -->
+
+{% extends "base.html" %}
+{% block content %}
+<!-- Page header: title on the left, quick link back to home on the right -->
+<section class="hero" style="margin-bottom:16px">
+  <div class="row space-between" style="align-items:flex-end; gap:16px">
+    <div>
+      <h1 style="margin:0 0 6px">All charity events</h1>
+      <p class="muted" style="margin:0">
+        Browse all published events that are currently available on CharityConnect.
+      </p>
+    </div>
+    <div>
+      <a class="btn" href="{{ url_for('main.index') }}">Back to home</a>
+    </div>
+  </div>
+</section>
+<!-- If there are events, show them in a responsive grid -->
+{% if events %}
+  <div class="events-grid">
+    {% for ev in events %}
+      <!-- Each event card: cover area, title, price, metadata, and action buttons -->
+      <div class="card event-card" style="position:relative">
+        <!-- Placeholder media area for event images (if added later) -->
+        <div class="event-media"></div>
+        <div class="event-body">
+          <!-- Event title + price aligned on the same row -->
+          <div class="row space-between" style="align-items:flex-start">
+            <h3 class="event-title" style="margin:0">{{ ev.title }}</h3>
+            <span class="price-chip" style="position:static; font-weight:700; box-shadow:none; border:none; background:none; padding:0;">
+              €{{ '%.2f' % (ev.ticket_price_cents/100) }}
+            </span>
+          </div>
+          <!-- Date, time, and venue -->
+          <div class="event-meta">
+            {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+          </div>
+          <!-- Optional description if provided by organiser -->
+          {% if ev.description %}
+            <p class="event-desc">{{ ev.description }}</p>
+          {% endif %}
+          <!-- Buttons to view event details or go straight to checkout -->
+          <div class="event-actions">
+            <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">View</a>
+            <a class="btn primary" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+<!-- If no events exist, show a simple placeholder message -->
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0">
+      No events are currently published. Admins can seed demo data, or verified organisers can add new events.
+    </p>
+  </div>
+{% endif %}
+
+{% endblock %}
+
+<!-- Version 2 -->

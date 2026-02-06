@@ -1,0 +1,19 @@
+# VERSION 3
+
+flask
+flask_sqlalchemy
+flask_login
+flask_wtf
+email_validator
+python-dotenv
+flask_mail
+psycopg2-binary
+stripe
+reportlab
+qrcode
+pillow
+wtforms-sqlalchemy
+openai
+werkzeug
+
+# VERSION 3

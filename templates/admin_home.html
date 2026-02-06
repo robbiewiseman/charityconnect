@@ -1,0 +1,37 @@
+<!-- VERSION 4 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Admin dashboard heading -->
+<h1>Admin</h1>
+<p class="muted">Choose a section.</p>
+
+<!-- Grid layout for admin sections -->
+<div class="grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:14px;">
+  <!-- Organiser verification card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Organiser verification</h3>
+    <p class="muted" style="margin:0 0 12px 0;">Review and approve organiser verification requests.</p>
+    <!-- Link to organiser/charity verification page -->
+    <a class="btn" href="{{ url_for('main.admin_verify') }}">Open</a>
+  </div>
+
+  <!-- Allocation and donation reports card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Allocation and donation reports</h3>
+    <p class="muted" style="margin:0 0 12px 0;">View verified allocation totals for reconciliation.</p>
+    <!-- Link to admin allocation report -->
+    <a class="btn" href="{{ url_for('main.report_allocations') }}">Open</a>
+  </div>
+
+  <!-- Audit log export card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Audit log export</h3>
+    <p class="muted" style="margin:0 0 12px 0;">Export key actions for traceability.</p>
+    <!-- Download audit log as CSV -->
+    <a class="btn" href="{{ url_for('main.audit_export') }}">Download CSV</a>
+  </div>
+</div>
+
+{% endblock %}
+<!-- VERSION 4 END -->
