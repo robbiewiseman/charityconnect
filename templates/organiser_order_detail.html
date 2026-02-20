@@ -1,0 +1,122 @@
+<!-- VERSION 5 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div style="max-width: 900px; margin: 0 auto;">
+  
+  <!-- Page Header -->
+  <div class="row space-between" style="align-items: flex-end; margin-bottom: 24px;">
+    <div>
+      <h2 style="margin: 0 0 6px;">Order #{{ order.id }}</h2>
+      <p class="muted" style="margin: 0;">
+        {{ order.event.title }} • {{ order.email }}
+      </p>
+    </div>
+    <a class="btn outline" href="{{ url_for('main.organiser_event_analytics', event_id=order.event_id) }}">
+      Back to Analytics
+    </a>
+  </div>
+
+  <!-- Order Summary Card -->
+  <div class="card" style="margin-bottom: 24px;">
+    <h3 style="margin: 0 0 16px;">Order Details</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+      <div>
+        <p class="muted" style="margin: 0; font-size: 13px;">Order Date</p>
+        <p style="margin: 0; font-weight: 600;">{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      </div>
+      <div>
+        <p class="muted" style="margin: 0; font-size: 13px;">Customer Email</p>
+        <p style="margin: 0; font-weight: 600;">{{ order.email }}</p>
+      </div>
+      <div>
+        <p class="muted" style="margin: 0; font-size: 13px;">Total Paid</p>
+        <p style="margin: 0; font-weight: 600;">€{{ '%.2f' % (order.total_cents / 100) }}</p>
+      </div>
+      <div>
+        <p class="muted" style="margin: 0; font-size: 13px;">Status</p>
+        <span class="badge verified">{{ order.status }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets Management -->
+  <div class="card">
+    <h3 style="margin: 0 0 16px;">Tickets ({{ tickets|length }})</h3>
+    
+    {% if tickets %}
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for ticket in tickets %}
+          {% if ticket.refunded %}
+            <div style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; background: #FEE2E2;">
+          {% elif ticket.redeemed %}
+            <div style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; background: #DCFCE7;">
+          {% else %}
+            <div style="border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; background: white;">
+          {% endif %}
+            
+            <!-- Ticket Header -->
+            <div class="row space-between" style="align-items: center; margin-bottom: 12px;">
+              <div>
+                <p style="margin: 0; font-weight: 600; font-size: 15px;">Ticket {{ loop.index }}</p>
+                <p class="muted" style="margin: 0; font-size: 12px; font-family: monospace;">{{ ticket.code }}</p>
+              </div>
+              
+              <!-- Status Badge -->
+              <div>
+                {% if ticket.refunded %}
+                  <span class="badge" style="background: #DC2626; color: white;">Refunded</span>
+                {% elif ticket.redeemed %}
+                  <span class="badge" style="background: #16A34A; color: white;">Redeemed</span>
+                {% else %}
+                  <span class="badge" style="background: #3B82F6; color: white;">Valid</span>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Ticket Actions -->
+            <div class="row" style="gap: 8px;">
+              {% if not ticket.redeemed and not ticket.refunded %}
+                <!-- Redeem Button -->
+                <form method="post" action="{{ url_for('main.organiser_ticket_redeem', ticket_id=ticket.id) }}" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn success">
+                    Redeem Ticket
+                  </button>
+                </form>
+                
+                <!-- Refund Button -->
+                <form method="post" action="{{ url_for('main.organiser_ticket_refund', ticket_id=ticket.id) }}" style="display: inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn danger-outline"
+                          onclick="return confirm('Are you sure you want to mark this ticket as refunded?')">
+                    Mark as Refunded
+                  </button>
+                </form>
+              {% endif %}
+              
+              <!-- Show timestamp if redeemed or refunded -->
+              {% if ticket.redeemed %}
+                <p class="muted" style="margin: 0; font-size: 12px; margin-left: auto;">
+                  Redeemed: {{ ticket.redeemed_at.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+              {% elif ticket.refunded %}
+                <p class="muted" style="margin: 0; font-size: 12px; margin-left: auto;">
+                  Refunded: {{ ticket.refunded_at.strftime('%Y-%m-%d %H:%M') }}
+                </p>
+              {% endif %}
+            </div>
+
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted" style="margin: 0;">No tickets found for this order.</p>
+    {% endif %}
+  </div>
+
+</div>
+
+{% endblock %}
+<!-- VERSION 5 END -->

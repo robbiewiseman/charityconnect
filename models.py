@@ -101,6 +101,10 @@ class Event(db.Model):
     is_completed = db.Column(db.Boolean, default=False, nullable=False)
     completed_at = db.Column(db.DateTime, nullable=True)
     # VERSION 4 END
+    # VERSION 5 START
+    cover_image = db.Column(db.LargeBinary, nullable=True)
+    cover_image_mimetype = db.Column(db.String(32), nullable=True)
+    # VERSION 5 END
 
     # Relationships to organiser and beneficiaries
     organiser = db.relationship('Organiser', backref='events')
@@ -161,6 +165,11 @@ class Ticket(db.Model):
     order_id = db.Column(db.Integer, db.ForeignKey('order.id'), index=True)
     code = db.Column(db.String(40), unique=True, index=True)
     redeemed = db.Column(db.Boolean, default=False)
+    # VERSION 5 START
+    redeemed_at = db.Column(db.DateTime, nullable=True)
+    refunded = db.Column(db.Boolean, default=False)
+    refunded_at = db.Column(db.DateTime, nullable=True)
+    # VERSION 5 END
 
 # VERSION 4 START
 class AuditLog(db.Model):
@@ -183,5 +192,23 @@ class AuditLog(db.Model):
     # Relationship to the user who performed the action
     actor = db.relationship("User", lazy="joined")
 # VERSION 4 END
+
+# VERSION 5 START
+class RefundRequest(db.Model):
+    # Stores refund requests submitted by users for their orders
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    reason = db.Column(db.Text, nullable=True)
+    # PENDING, APPROVED, DENIED
+    status = db.Column(db.String(20), nullable=False, default='PENDING')
+    requested_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    organiser_note = db.Column(db.Text, nullable=True)
+
+    # Relationships
+    order = db.relationship('Order', backref='refund_requests')
+    user = db.relationship('User')
+# VERSION 5 END
 
 # VERSION 1

@@ -52,7 +52,7 @@ def chat(messages, *, model=None, temperature=0.7, max_tokens=500) -> str:
     cfg = current_app.config
 
     # Choose model: passed in > config value > default model
-    model = model or cfg.get("OPENROUTER_MODEL") or "meta-llama/llama-3.3-70b-instruct:free"
+    model = model or cfg.get("OPENROUTER_MODEL") or "arcee-ai/trinity-large-preview:free"
 
     try:
         # Send chat completion request to OpenRouter

@@ -1,0 +1,94 @@
+<!-- VERSION 5 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:20px">
+  <div>
+    <h2 style="margin:0 0 6px">Refund Requests</h2>
+    <p class="muted" style="margin:0">Review and respond to refund requests from attendees.</p>
+  </div>
+  <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+</div>
+
+{% if requests %}
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    {% for req in requests %}
+      <div class="card">
+        <div class="row space-between" style="align-items:flex-start; flex-wrap:wrap; gap:12px;">
+
+          <!-- Left: request info -->
+          <div>
+            <h3 style="margin:0 0 4px;">{{ req.order.event.title }}</h3>
+            <p class="muted" style="margin:0; font-size:13px;">
+              Order #{{ req.order.id }} &bull; {{ req.order.email }} &bull;
+              &euro;{{ '%.2f' % (req.order.total_cents / 100) }} &bull;
+              Requested {{ req.requested_at.strftime('%d %b %Y %H:%M') }}
+            </p>
+            {% if req.reason %}
+              <p style="margin:8px 0 0; font-size:13px;">
+                <strong>Reason:</strong> {{ req.reason }}
+              </p>
+            {% else %}
+              <p class="muted" style="margin:8px 0 0; font-size:13px;">No reason provided.</p>
+            {% endif %}
+          </div>
+
+          <!-- Right: status badge -->
+          <div>
+            {% if req.status == 'PENDING' %}
+              <span class="badge" style="background:#FEF9C3; color:#854D0E;">Pending</span>
+            {% elif req.status == 'APPROVED' %}
+              <span class="badge" style="background:#DCFCE7; color:#166534;">Approved</span>
+            {% elif req.status == 'DENIED' %}
+              <span class="badge" style="background:#FEE2E2; color:#991B1B;">Denied</span>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <!-- Resolution form - only show for pending requests -->
+        {% if req.status == 'PENDING' %}
+          <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line);">
+            <form method="post" action="{{ url_for('main.organiser_resolve_refund', req_id=req.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label style="font-size:13px; font-weight:600;">
+                Message to user (optional)
+              </label>
+              <textarea name="organiser_note" rows="2"
+                        placeholder="e.g. Refund processed to your card within 5–10 days…"
+                        style="width:100%; box-sizing:border-box; margin:6px 0 12px; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:13px;"></textarea>
+              <div class="row" style="gap:8px;">
+                <button type="submit" name="decision" value="approve"
+                        class="btn" style="background:#16A34A; color:white;">
+                  Approve Refund
+                </button>
+                <button type="submit" name="decision" value="deny"
+                        class="btn outline" style="color:#DC2626; border-color:#DC2626;"
+                        onclick="return confirm('Deny this refund request?')">
+                  Deny Refund
+                </button>
+              </div>
+            </form>
+          </div>
+        {% else %}
+          <!-- Show resolution details if already resolved -->
+          <div style="margin-top:12px; font-size:13px; color:var(--muted);">
+            Resolved on {{ req.resolved_at.strftime('%d %b %Y %H:%M') }}.
+            {% if req.organiser_note %}
+              Note: &ldquo;{{ req.organiser_note }}&rdquo;
+            {% endif %}
+          </div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0;">No refund requests yet.</p>
+  </div>
+{% endif %}
+
+{% endblock %}
+<!-- VERSION 5 END -->

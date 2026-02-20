@@ -4,6 +4,9 @@
 # Each form handles user input and validation for specific parts of the system.
 
 from flask_wtf import FlaskForm
+# VERSION 5 START
+from flask_wtf.file import FileField, FileAllowed
+# VERSION 5 END
 from wtforms import (StringField, PasswordField, SubmitField, IntegerField, TextAreaField, SelectField, BooleanField, DateTimeLocalField, DecimalField, FieldList, FormField, EmailField)
 # VERSION 3 START
 from wtforms.validators import DataRequired, Email, Length, NumberRange, EqualTo, Optional, InputRequired
@@ -62,6 +65,12 @@ class EventForm(FlaskForm):
     # https://wtforms.readthedocs.io/en/stable/fields/
     ticket_price_eur = DecimalField("Ticket Price (€)", places=2, rounding=None, validators=[DataRequired(), NumberRange(min=0)])
     published = BooleanField("Publish?")
+    # VERSION 5 START
+    cover_image = FileField("Event Image (optional)", validators=[
+        Optional(),
+        FileAllowed(['jpg', 'jpeg', 'png'], 'JPG and PNG only.')
+    ])
+    # VERSION 5 END
 
     # allow organisers to add multiple charities to an event
      # Reference: FieldList + FormField composition (WTForms, 2024)

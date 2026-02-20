@@ -40,7 +40,7 @@ class Config:
 
     # VERSION 3 START
     OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY", "")
-    OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+    OPENROUTER_MODEL = os.getenv("OPENROUTER_MODEL", "arcee-ai/trinity-large-preview:free")
     OPENROUTER_SITE_URL = os.getenv("OPENROUTER_SITE_URL", "http://127.0.0.1:5000")
     OPENROUTER_SITE_NAME = os.getenv("OPENROUTER_SITE_NAME", "CharityConnect")
     # VERSION 3 END

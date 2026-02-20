@@ -15,6 +15,9 @@
   <!-- Action buttons -->
   <div class="row" style="gap:10px">
     <a class="btn outline" href="{{ url_for('main.organiser_event_edit', event_id=ev.id) }}">Edit Event</a>
+    <!-- VERSION 5 START -->
+    <a class="btn primary" href="{{url_for('main.organiser_export_payouts', event_id=ev.id) }}">Export Payout Summary</a>
+    <!-- VERSION 5 END -->
     <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
   </div>
 </div>
@@ -152,5 +155,143 @@
     });
   })();
 </script>
+
+<!-- VERSION 5 START -->
+<!-- Orders List Section -->
+<h3 style="margin-top:32px; margin-bottom:16px;">Order Management</h3>
+
+{% if orders %}
+  <div class="card">
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid #E2E8F0; text-align: left;">
+          <th style="padding: 12px;">Order ID</th>
+          <th style="padding: 12px;">Email</th>
+          <th style="padding: 12px;">Date</th>
+          <th style="padding: 12px;">Tickets</th>
+          <th style="padding: 12px;">Status</th>
+          <th style="padding: 12px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in orders %}
+          {% set order = item.order %}
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 12px; font-weight: 600;">#{{ order.id }}</td>
+            <td style="padding: 12px;">{{ order.email }}</td>
+            <td style="padding: 12px; font-size: 13px; color: #64748B;">
+              {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </td>
+            <td style="padding: 12px;">
+              <span style="font-weight: 600;">{{ item.total_tickets }}</span> ticket(s)
+              {% if item.redeemed_count > 0 %}
+                <br><span style="font-size: 12px; color: #16A34A;">{{ item.redeemed_count }} redeemed</span>
+              {% endif %}
+              {% if item.refunded_count > 0 %}
+                <br><span style="font-size: 12px; color: #DC2626;">{{ item.refunded_count }} refunded</span>
+              {% endif %}
+            </td>
+            <td style="padding: 12px;">
+              <span class="badge verified">PAID</span>
+            </td>
+            <td style="padding: 12px;">
+              <a class="btn outline" href="{{ url_for('main.organiser_order_detail', order_id=order.id) }}" style="font-size: 13px;">
+                Manage Tickets
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0;">No paid orders yet.</p>
+  </div>
+{% endif %}
+
+<!-- Beneficiary Payout Summary -->
+<div class="card" style="margin-top:16px">
+  <div class="row space-between" style="align-items:center; margin-bottom:12px;">
+    <h3 style="margin:0">Beneficiary Payout Summary</h3>
+    <a class="btn outline" href="{{ url_for('main.organiser_export_payouts', event_id=ev.id) }}">
+      Download CSV
+    </a>
+  </div>
+
+  {% if allocations %}
+    <div style="overflow:auto; border-radius:10px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #E2E8F0; text-align:left;">
+            <th style="padding:12px; font-size:13px; color:#64748B;">Charity</th>
+            <th style="padding:12px; font-size:13px; color:#64748B; text-align:right;">Allocation %</th>
+            <th style="padding:12px; font-size:13px; color:#64748B; text-align:right;">Amount Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alloc in allocations %}
+            <tr style="border-bottom:1px solid #E2E8F0;">
+              <td style="padding:12px; font-weight:600;">{{ alloc.charity_name }}</td>
+              <td style="padding:12px; text-align:right;">{{ alloc.percent }}%</td>
+              <td style="padding:12px; text-align:right; font-weight:700; color:#059669;">
+                €{{ '%.2f' % (alloc.estimated_cents / 100) }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #E2E8F0;">
+            <td style="padding:12px; font-weight:700;">Total</td>
+            <td style="padding:12px; text-align:right; font-weight:700;">100%</td>
+            <td style="padding:12px; text-align:right; font-weight:700; color:#059669;">
+              €{{ '%.2f' % (total_raised_cents / 100) }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div style="margin-top:12px; padding:12px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px;">
+      <p style="margin:0; font-size:13px; color:#166534;">
+        <strong>Note:</strong> This summary shows estimated amounts based on ticket sales and donations.
+        Export the CSV to share with charities for fund transfer verification.
+      </p>
+    </div>
+
+  {% else %}
+    <p class="muted" style="margin:0;">No beneficiaries configured for this event.</p>
+  {% endif %}
+</div>
+
+<!-- Impact Summary Section -->
+{% if ev.is_completed %}
+  <div class="card" style="margin-top:16px">
+    <div class="row space-between" style="align-items:center; gap:12px; flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0 0 4px">Post-Event Impact Summaries</h3>
+        <p class="muted" style="margin:0">
+          Send impact summaries to all attendees showing how their contributions made a difference.
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('main.send_event_impact_summaries', event_id=ev.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn primary" 
+                onclick="return confirm('Send impact summary emails to all {{ paid_orders_count }} attendees?')">
+          Send Impact Summaries
+        </button>
+      </form>
+    </div>
+    
+    <div style="margin-top:12px; padding:12px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px;">
+      <p style="margin:0; font-size:13px; color:#1E40AF;">
+        <strong>What gets sent:</strong> Each attendee receives an email showing the total raised (€{{ '%.2f' % (total_raised_cents / 100) }}), 
+        how funds were allocated to charities, and their personal contribution amount.
+      </p>
+    </div>
+  </div>
+{% endif %}
+<!-- VERSION 5 END -->
+
 {% endblock %}
 <!-- VERSION 3 END -->

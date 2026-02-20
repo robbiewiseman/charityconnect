@@ -1,168 +1,104 @@
 <!-- Version 1 -->
-
 {% extends "base.html" %}
 {% block content %}
 
-<!-- VERSION 2 START -->
-<!-- HERO / INTRO SECTION -->
-<section class="hero">
-  <!-- Two-column intro layout: headline + description on the left, summary card on the right -->
-  <div class="row space-between" style="align-items:flex-start; gap:20px">
-    <!-- Main intro text explaining the platform’s purpose -->
-    <div style="max-width:540px">
-      <h1 style="margin-bottom:8px">Support real charities through transparent ticketed events</h1>
-      <p class="muted" style="font-size:1.05rem; margin:0 0 14px">
-        CharityConnect helps organisers run verified charity events, and gives donors clear visibility
-        on where their ticket money and donations go.
-      </p>
-      <p class="muted" style="margin:0">
-        Browse live events below, or apply for organiser / charity verification to publish your own.
-      </p>
-    </div>
-
-    <!-- Right-side summary card giving a quick explanation of what the platform does -->
-    <div class="card" style="max-width:320px">
-      <h3 style="margin-top:0; margin-bottom:6px">What is CharityConnect?</h3>
-      <p class="muted" style="margin:0 0 8px; font-size:.95rem;">
-        A simple platform for:
-      </p>
-      <ul style="margin:0 0 8px 18px; padding:0; font-size:.95rem;">
-        <li>Running ticketed charity events</li>
-        <li>Splitting funds across multiple charities</li>
-        <li>Issuing QR-coded receipts for transparency</li>
-      </ul>
-      <p class="muted" style="margin:0; font-size:.9rem;">
-        This prototype focuses on verified organisers, transparent allocations,
-        and clear donation receipts.
-      </p>
+<!-- VERSION 5 START -->
+<!-- HERO BAND -->
+<section class="hero-band">
+  <div style="max-width:620px">
+    <h1>Support real charities through transparent events</h1>
+    <p>
+      CharityConnect lets verified organisers run ticketed fundraising events with full
+      transparency — donors can see exactly which charities receive their money and in
+      what proportions.
+    </p>
+    <div class="hero-actions">
+      <a class="btn-hero-primary" href="{{ url_for('main.events_list') }}">Browse events &rarr;</a>
+      <a class="btn-hero-ghost" href="{{ url_for('main.apply_verification') }}">Apply for verification</a>
     </div>
   </div>
 </section>
 
-<!-- METRIC / META BOX STRIP -->
-<section style="margin-top:10px">
-  <div class="row" style="gap:16px; flex-wrap:wrap">
-    <!-- Three small cards showing example platform metrics (static sample values for now) -->
-    <div class="card" style="flex:1 1 180px; min-width:180px">
-      <span class="muted" style="font-size:.85rem">Charities supported</span>
-      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">24+</div>
-      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
-        Example figure showing the number of registered charity partners.
-      </p>
-    </div>
+<!-- VERSION 5 START -->
+<div class="stat-card">
+  <div class="stat-label">Charities supported</div>
+  <div class="stat-value">{{ charities_count }}</div>
+  <div class="stat-desc">Verified charity partners on the platform</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Tickets processed</div>
+  <div class="stat-value">{{ tickets_count }}</div>
+  <div class="stat-desc">Tickets issued across all events</div>
+</div>
+<div class="stat-card">
+  <div class="stat-label">Funds raised</div>
+  <div class="stat-value">&euro;{{ '%.2f' % funds_raised_eur }}</div>
+  <div class="stat-desc">Combined ticket revenue &amp; donations</div>
+</div>
+<!-- VERSION 5 END -->
 
-    <div class="card" style="flex:1 1 180px; min-width:180px">
-      <span class="muted" style="font-size:.85rem">Tickets processed</span>
-      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">1,250+</div>
-      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
-        Sample count of tickets issued across all events on the platform.
-      </p>
-    </div>
-
-    <div class="card" style="flex:1 1 180px; min-width:180px">
-      <span class="muted" style="font-size:.85rem">Funds raised</span>
-      <div style="font-size:1.6rem; font-weight:700; margin-top:4px">€85,000+</div>
-      <p class="muted" style="margin:4px 0 0; font-size:.85rem">
-        Illustrative total combining ticket revenue and optional donations.
-      </p>
-    </div>
-  </div>
-</section>
-
-<!-- HOW IT WORKS / ORGANISER VALUE -->
-<section style="margin-top:20px">
-  <!-- Two cards: one explaining the workflow, one explaining organiser benefits -->
+<!-- HOW IT WORKS + WHY -->
+<section style="margin-bottom:28px">
   <div class="row" style="gap:16px; align-items:stretch; flex-wrap:wrap">
-    <!-- High-level steps showing the end-to-end flow for events and donations -->
     <div class="card" style="flex:1 1 260px; min-width:260px">
-      <h3 style="margin:0 0 8px">How CharityConnect works</h3>
-      <ol style="margin:0 0 4px 18px; padding:0; font-size:.95rem;">
-        <li>Organisers or charities apply for verification.</li>
-        <li>Admins review applications in the verification dashboard.</li>
-        <li>Verified organisers can publish ticketed events.</li>
+      <h3 style="margin:0 0 14px">How it works</h3>
+      <ol style="margin:0 0 0 18px; padding:0; font-size:.95rem; line-height:1.8; color:var(--text-0)">
+        <li>Organisers and charities apply for verification.</li>
+        <li>Admins review applications in the dashboard.</li>
+        <li>Verified organisers publish ticketed events.</li>
         <li>Donors buy tickets, optionally add a donation, and receive a QR-coded receipt.</li>
-        <li>Funds are allocated to charities according to the published percentages.</li>
+        <li>Funds are split to charities by the published percentages.</li>
       </ol>
-      <p class="muted" style="margin:6px 0 0; font-size:.85rem;">
-        The current iteration focuses on this end-to-end flow for a small set of sample events.
-      </p>
     </div>
-
-    <!-- Reasons an organiser would choose CharityConnect for their fundraising -->
     <div class="card" style="flex:1 1 260px; min-width:260px">
-      <h3 style="margin:0 0 8px">Why organisers use CharityConnect</h3>
-      <ul style="margin:0 0 4px 18px; padding:0; font-size:.95rem;">
-        <li>Clear audit trail for each order and receipt.</li>
-        <li>Built-in split allocations across multiple charities.</li>
-        <li>Simple Stripe checkout with instant confirmation.</li>
-        <li>Verification step to build trust with donors.</li>
+      <h3 style="margin:0 0 14px">Why organisers choose us</h3>
+      <ul style="margin:0 0 0 18px; padding:0; font-size:.95rem; line-height:1.8; color:var(--text-0)">
+        <li>Full audit trail for every order and receipt.</li>
+        <li>Built-in fund splitting across multiple charities.</li>
+        <li>Simple checkout with instant confirmation.</li>
+        <li>Verification badge to build trust with donors.</li>
+        <li>Refund management handled in one place.</li>
       </ul>
-      <p class="muted" style="margin:6px 0 0; font-size:.85rem;">
-        These benefits are demonstrated using seeded example data and flows in this prototype.
-      </p>
     </div>
   </div>
 </section>
-<!-- VERSION 2 END -->
 
-<!-- Role-based message banner -->
- <!-- Reference: Jinja if (Pallets Projects, 2024)
-https://jinja.palletsprojects.com/en/stable/templates/#if -->
+<!-- Role-based banner -->
 {% if current_role in ['organiser','admin'] %}
-  <!-- Visible to Organisers/Admins: quick access to event creation -->
-  <div class="flash info">
-    <!-- Reference: Flask url_for (Pallets Projects, 2024)
-    https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+  <div class="flash info" style="margin-bottom:20px">
     You can create events via <a href="{{ url_for('main.event_new') }}">New Event</a>.
     Current role: <strong>{{ current_role }}</strong>.
   </div>
-{% else %}
-  <!-- Visible to regular users -->
-  <p class="muted">Browse and buy tickets below.</p>
 {% endif %}
 
-<!-- EVENT GRID LISTING -->
-<!-- Reference: Jinja for-loop (Pallets Projects, 2024)
-https://jinja.palletsprojects.com/en/stable/templates/#for -->
+<!-- EVENT GRID -->
+<div class="section-title">Upcoming events</div>
 {% if events %}
-  <!-- Events exist: render as responsive grid -->
   <div class="events-grid">
     {% for ev in events %}
-      <!-- Each card represents a single verified event -->
       <div class="card event-card" style="position:relative">
-        <!-- Placeholder media / hero image -->
-        <div class="event-media"></div>
-
-        <!-- Event summary body -->
+        <div class="event-media"
+            data-title="{{ ev.title if not ev.cover_image else '' }}"
+            {% if ev.cover_image %}
+              style="background-image: url(&quot;{{ url_for('main.event_cover', event_id=ev.id) }}&quot;); background-size:cover; background-position:center;"
+            {% endif %}
+        ></div>
         <div class="event-body">
           <div class="row space-between" style="align-items:flex-start">
-            <!-- Event title -->
             <h3 class="event-title" style="margin:0">{{ ev.title }}</h3>
-            <!-- Ticket price displayed clearly -->
-            <span class="price-chip" style="position:static; font-weight:700; box-shadow:none; border:none; background:none; padding:0;">
-              €{{ '%.2f' % (ev.ticket_price_cents/100) }}
+            <span style="font-weight:800; font-size:1rem; color:var(--brand-primary); white-space:nowrap; margin-left:8px">
+              &euro;{{ '%.2f' % (ev.ticket_price_cents/100) }}
             </span>
           </div>
-
-          <!-- Event metadata: date/time and venue -->
-          <!-- Reference: Python datetime strftime in templates (PSF, 2024)
-          https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
           <div class="event-meta">
-            {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+            {{ ev.starts_at.strftime('%d %b %Y') }} at {{ ev.starts_at.strftime('%H:%M') }}
+            &bull; {{ ev.venue or 'TBA' }}
           </div>
-
-          <!-- Optional short description -->
           {% if ev.description %}
             <p class="event-desc">{{ ev.description }}</p>
           {% endif %}
-
-           <!-- Action buttons -->
           <div class="event-actions">
-            <!-- Reference: Flask url_for (Pallets Projects, 2024)
-            https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
-            <!-- View details (navigates to event_detail.html) -->
             <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">View</a>
-            <!-- Direct link to checkout (event_buy.html) -->
             <a class="btn primary" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
           </div>
         </div>
@@ -170,9 +106,10 @@ https://jinja.palletsprojects.com/en/stable/templates/#for -->
     {% endfor %}
   </div>
 {% else %}
-  <!-- No events available -->
   <div class="card"><p class="muted" style="margin:0">No events yet.</p></div>
 {% endif %}
-{% endblock %}
 
+<!-- VERSION 5 END -->
+
+{% endblock %}
 <!-- Version 1 -->

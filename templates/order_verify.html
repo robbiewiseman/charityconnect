@@ -1,24 +1,36 @@
 <!-- VERSION 2 START -->
 {% extends "base.html" %}
 {% block content %}
+
+<!-- VERSION 5 START -->
 <!-- Outer card to keep the verification message centred and easy to read -->
-<div class="card" style="max-width:560px">
+<div class="card" style="max-width:560px; margin:0 auto; text-align:center; padding:32px;">
+
   <!-- Page heading -->
-  <h2 style="margin-top:0">Receipt verification</h2>
-  <!-- If the receipt is valid, show success state with order details -->
+  <h2 style="margin:0 0 8px;">QR Ticket Verification</h2>
+
+  <!-- If the receipt is valid, show info for organiser -->
   {% if ok %}
-    <div class="flash success">Valid receipt for Order #{{ order.id }} — status: PAID.</div>
-    <!-- Basic event and payment info -->
-    <p>Event: <strong>{{ order.event.title }}</strong></p>
-    <p>Total: €{{ '%.2f' % (order.total_cents/100) }}</p>
+    <p class="muted" style="margin:0 0 6px;">
+      This QR code belongs to <strong>Order #{{ order.id }}</strong> for
+      <strong>{{ order.event.title }}</strong>.
+    </p>
+    <p class="muted" style="margin:0 0 20px;">
+      This page is for event organisers to scan at the door. Scanning this QR code will
+      mark the ticket as redeemed and confirm entry.
+    </p>
   <!-- If the receipt is not valid, show error message -->
   {% else %}
-    <div class="flash danger">This order is not marked as paid yet.</div>
+    <div class="flash danger" style="margin-bottom:16px;">This order is not marked as paid yet.</div>
   {% endif %}
+
   <!-- Back button to return the user to the main events page -->
   <div style="margin-top:12px">
     <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
   </div>
+
 </div>
+<!-- VERSION 5 END -->
+
 {% endblock %}
 <!-- VERSION 2 END -->

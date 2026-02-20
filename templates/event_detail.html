@@ -4,52 +4,73 @@
 {% block content %}
 
 <!-- Event Detail Layout -->
-<div class="row" style="align-items:flex-start; gap:18px">
+<!-- VERSION 5 START -->
+<div class="row" style="align-items:flex-start; gap:24px; flex-wrap:wrap;">
   <!-- LEFT COLUMN: Event information and beneficiaries -->
-  <div class="grow">
+  <div class="grow" style="min-width:280px">
     <!-- Event Card: displays headline information for a single event -->
     <div class="card event-card" style="padding:0; overflow:hidden">
       <!-- Placeholder banner/media section -->
-      <div class="event-media"></div>
+      <div class="event-media"
+            data-title="{{ ev.title if not ev.cover_image else '' }}"
+            {% if ev.cover_image %}
+              style="background-image: url(&quot;{{ url_for('main.event_cover', event_id=ev.id) }}&quot;); background-size:cover; background-position:center;"
+            {% endif %}
+        ></div>
+      <!-- VERSION 5 END -->
       <!-- Body content containing event metadata -->
       <div class="event-body">
         <div class="row space-between" style="align-items:flex-start">
           <!-- Dynamic event title -->
           <h2 class="event-title" style="margin:0">{{ ev.title }}</h2>
           <!-- Ticket price badge -->
-          <span class="badge" style="font-weight:700">€{{ '%.2f' % (ev.ticket_price_cents/100) }}</span>
+          <!-- VERSION 5 START -->
+          <span style="font-weight:800; font-size:1.1rem; color:var(--brand-primary); white-space:nowrap; margin-left:10px">
+            &euro;{{ '%.2f' % (ev.ticket_price_cents/100) }}
+          <!-- VERSION 5 END -->
+          </span>
         </div>
 
         <!-- Event date/time and venue -->
         <!-- Reference: Python datetime strftime in templates (PSF, 2024)
         https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
         <div class="event-meta" style="margin-top:6px">
-          {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+          <!-- VERSION 5 START -->
+          {{ ev.starts_at.strftime('%d %b %Y') }} at {{ ev.starts_at.strftime('%H:%M') }}
+          &bull; {{ ev.venue or 'TBA' }}
+          <!-- VERSION 5 END -->
         </div>
 
         <!-- Optional event description -->
         <!-- Reference: Jinja if (Pallets Projects, 2024)
         https://jinja.palletsprojects.com/en/stable/templates/#if -->
         {% if ev.description %}
-          <p class="event-desc" style="-webkit-line-clamp:unset; margin-top:12px">{{ ev.description }}</p>
+          <!-- VERSION 5 START -->
+          <p style="margin-top:14px; line-height:1.65; color:var(--text-0)">{{ ev.description }}</p>
+          <!-- VERSION 5 END -->
         {% endif %}
       </div>
     </div>
 
     <!-- Beneficiary section (transparency element) -->
+     <!-- VERSION 5 START -->
     <div class="card" style="margin-top:18px">
-      <h3 style="margin:0 0 8px">Beneficiaries</h3>
+      <h3 style="margin:0 0 14px">Where your money goes</h3>
       <!-- Reference: Jinja for-loop (Pallets Projects, 2024)
       https://jinja.palletsprojects.com/en/stable/templates/#for -->
       {% if ev.beneficiaries %}
         <!-- List of verified charities and their allocation percentages -->
-        <div class="row" style="flex-direction:column; gap:8px">
+        <div style="display:flex; flex-direction:column; gap:8px">
           {% for b in ev.beneficiaries %}
-            <div class="row space-between" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff">
-              <strong>{{ b.charity.name }}</strong>
-              <span class="badge" style="font-weight:700">{{ b.allocation_percent }}%</span>
+            <div style="display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:10px; padding:12px 14px; background:#fafbff">
+              <div style="display:flex; align-items:center; gap:10px">
+                <div style="width:8px; height:8px; border-radius:50%; background:var(--brand-primary); flex-shrink:0"></div>
+                <strong>{{ b.charity.name }}</strong>
+              </div>
+              <span class="badge" style="font-weight:700; background:var(--brand-primary); color:#fff; border-color:var(--brand-primary)">{{ b.allocation_percent }}%</span>
             </div>
           {% endfor %}
+          <!-- VERSION 5 END -->
         </div>
       {% else %}
         <!-- Fallback if organiser has not defined beneficiaries yet -->
@@ -58,29 +79,31 @@
     </div>
   </div>
 
-  <!-- RIGHT COLUMN: Ticket summary and call-to-action -->
-  <aside style="width:340px; max-width:100%">
-    <div class="card ticket">
-      <div class="row space-between">
-        <strong>Ticket</strong>
-        <strong>€{{ '%.2f' % (ev.ticket_price_cents/100) }}</strong>
+  <!-- RIGHT COLUMN: Ticket purchase card -->
+  <!-- VERSION 5 START -->
+  <aside style="width:340px; max-width:100%; flex-shrink:0">
+    <div class="card ticket" style="position:sticky; top:80px">
+      <div style="text-align:center; padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:16px"></div>
+        <div class="muted" style="font-size:.85rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:6px">Ticket price</div>
+        <div style="font-size:2.2rem; font-weight:800; color:var(--brand-primary)">&euro;{{ '%.2f' % (ev.ticket_price_cents/100) }}</div>
       </div>
+  <!-- VERSION 5 END -->
 
       <!-- Action buttons -->
       <!-- Reference: Flask url_for (Pallets Projects, 2024)
       https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
-      <div class="row" style="gap:10px; margin-top:14px">
+      <!-- VERSION 5 START -->
+      <div class="row" style="gap:10px; margin-bottom:16px">
         <!-- Return to event listings -->
         <a class="btn" href="{{ url_for('main.index') }}">Back</a>
         <!-- Proceed to checkout for this event -->
         <a class="btn primary grow" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
       </div>
 
-      <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)">
-      <!-- Note reinforcing transparency and allocation accuracy -->
-      <div class="muted" style="font-size:.9rem">
+      <p class="muted" style="font-size:.85rem; margin:0; line-height:1.5; text-align:center">
         Your purchase supports the listed charities. Funds are allocated exactly by the stated percentages.
-      </div>
+      <!-- VERSION 5 END -->
+      </p>
     </div>
   </aside>
 </div>

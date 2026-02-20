@@ -175,6 +175,9 @@ receipt builder in routes.py: https://chatgpt.com/share/691d0c58-b260-8004-8756-
 # VERSION 3 START
 JavaScript Logic in event_new.html and organiser_event_analytics.html: https://chatgpt.com/share/69736e29-4d08-8004-a8ff-71f40f533a51
 # VERSION 3 END
+# VERSION 5 START
+# Helper: sends impact summary emails to all unique paid attendees for an event: https://chatgpt.com/share/699701ad-b814-8004-a7e4-87f0f5dcd97e
+# VERSION 5 END
 
 ====================================================================================
 # VERSION 1
@@ -350,3 +353,34 @@ Notes: Google’s official SMTP documentation informed the email delivery config
 =============================================================================================
 # VERSION 4 END
 =============================================================================================
+
+# VERSION 5 START
+=============================================================================================
+
+Here are the two README entries formatted to match your existing style:
+31. Flask File Uploads — request.files (Pallets Projects, 2025)
+URLs:
+https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+https://flask.palletsprojects.com/en/stable/api/#flask.Request.files
+Usage:
+routes.py (event_new, organiser_event_edit):
+- Accessing uploaded cover image files via request.files.get('cover_image').
+- Checking img.filename to confirm a file was actually selected before reading.
+- Reading binary image data with img.read() and storing the MIME type via img.mimetype.
+- Supporting a remove_cover_image checkbox to clear stored image data on edit.
+forms.py:
+- FileField used to add a file upload input to EventForm for the optional event cover image.
+- FileAllowed validator used to restrict uploads to JPG and PNG file types only.
+Notes: Flask's file upload documentation was referenced to understand how multipart form data is handled via request.files and how to safely read binary content from an uploaded file. The FileField and FileAllowed patterns from Flask-WTF were used to integrate upload validation directly into the form class before the route processes the file.
+
+
+32. SQLAlchemy Session.expire_all() — Forcing Fresh State from the Database (SQLAlchemy, 2025)
+URL: https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.expire_all
+Usage:
+routes.py (organiser_scan_ticket):
+- Called before reading ticket states to ensure SQLAlchemy's identity map cache is discarded and all ticket redeemed/refunded flags are reloaded fresh from the database.
+- Called a second time after the POST commit so the template always reflects the latest committed ticket states rather than stale in-memory values.
+routes.py (organiser_order_detail):
+- Called before fetching tickets to guarantee fresh redeemed and refunded states are displayed to the organiser when viewing an order.
+Notes: The SQLAlchemy session API documentation was referenced to understand how expire_all() forces the session to discard its cached object state, ensuring subsequent attribute access triggers a fresh database query. This was necessary to prevent stale ticket states being displayed immediately after a commit.
+

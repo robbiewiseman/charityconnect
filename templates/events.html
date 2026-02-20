@@ -3,17 +3,14 @@
 {% extends "base.html" %}
 {% block content %}
 <!-- Page header: title on the left, quick link back to home on the right -->
-<section class="hero" style="margin-bottom:16px">
-  <div class="row space-between" style="align-items:flex-end; gap:16px">
+  <!-- VERSION 5 START -->
+  <div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:24px">
     <div>
-      <h1 style="margin:0 0 6px">All charity events</h1>
-      <p class="muted" style="margin:0">
-        Browse all published events that are currently available on CharityConnect.
-      </p>
+      <h2 style="margin:0 0 4px">All charity events</h2>
+      <p class="muted" style="margin:0">Browse all published events that are currently available on CharityConnect.</p>
     </div>
-    <div>
-      <a class="btn" href="{{ url_for('main.index') }}">Back to home</a>
-    </div>
+    <a class="btn" href="{{ url_for('main.index') }}">Back to home</a>
+    <!-- VERSION 5 END -->
   </div>
 </section>
 <!-- If there are events, show them in a responsive grid -->
@@ -22,19 +19,30 @@
     {% for ev in events %}
       <!-- Each event card: cover area, title, price, metadata, and action buttons -->
       <div class="card event-card" style="position:relative">
-        <!-- Placeholder media area for event images (if added later) -->
-        <div class="event-media"></div>
+        <!-- VERSION 5 START -->
+        <div class="event-media"
+            data-title="{{ ev.title if not ev.cover_image else '' }}"
+            {% if ev.cover_image %}
+              style="background-image: url(&quot;{{ url_for('main.event_cover', event_id=ev.id) }}&quot;); background-size:cover; background-position:center;"
+            {% endif %}
+        ></div>
+        <!-- VERSION 5 END -->
         <div class="event-body">
           <!-- Event title + price aligned on the same row -->
           <div class="row space-between" style="align-items:flex-start">
             <h3 class="event-title" style="margin:0">{{ ev.title }}</h3>
-            <span class="price-chip" style="position:static; font-weight:700; box-shadow:none; border:none; background:none; padding:0;">
-              €{{ '%.2f' % (ev.ticket_price_cents/100) }}
+            <!-- VERSION 5 START -->
+            <span style="font-weight:800; font-size:1rem; color:var(--brand-primary); white-space:nowrap; margin-left:8px">
+              &euro;{{ '%.2f' % (ev.ticket_price_cents/100) }}
+            <!-- VERSION 5 END -->
             </span>
           </div>
           <!-- Date, time, and venue -->
           <div class="event-meta">
-            {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+            <!-- VERSION 5 START -->
+            {{ ev.starts_at.strftime('%d %b %Y') }} at {{ ev.starts_at.strftime('%H:%M') }}
+            &bull; {{ ev.venue or 'TBA' }}
+            <!-- VERSION 5 END -->
           </div>
           <!-- Optional description if provided by organiser -->
           {% if ev.description %}
@@ -52,9 +60,7 @@
 <!-- If no events exist, show a simple placeholder message -->
 {% else %}
   <div class="card">
-    <p class="muted" style="margin:0">
-      No events are currently published. Admins can seed demo data, or verified organisers can add new events.
-    </p>
+    <p class="muted" style="margin:0">No events are currently published. Check back soon</p>
   </div>
 {% endif %}
 

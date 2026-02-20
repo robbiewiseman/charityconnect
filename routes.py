@@ -27,7 +27,9 @@ from datetime import datetime
 from openrouter_client import chat, OpenRouterError
 # VERSION 3 END
 # VERSION 4 START
-from email_utils import send_receipt_email
+# VERSION 5 START
+from email_utils import send_receipt_email, send_refund_decision_email, send_impact_summary_email
+# VERSION 5 END
 from extensions import csrf, mail
 from sqlalchemy import cast, Float
 from audit import log_action
@@ -36,9 +38,9 @@ from io import StringIO
 # VERSION 4 END
 # VERSION 2 END
 
-# VERSION 4 START
-from models import (db, User, Organiser, Charity, Event, EventBeneficiary, Order, Ticket, AuditLog, ROLE_USER, ROLE_ORG, ROLE_ADMIN)
-# VERSION 4 END
+# VERSION 5 START
+from models import (db, User, Organiser, Charity, Event, EventBeneficiary, Order, Ticket, AuditLog, RefundRequest, ROLE_USER, ROLE_ORG, ROLE_ADMIN)
+# VERSION 5 END
 
 # Reference: Flask Blueprints Documentation (Pallets Projects, 2024)
 # https://flask.palletsprojects.com/en/stable/blueprints/
@@ -55,7 +57,10 @@ def build_receipt_pdf(order):
     ev = order.event
 
     # Build verification URL for this order
-    verify_url = url_for("main.order_verify", order_id=order.id, _external=True)
+    # VERSION 5 START
+    # QR now links to organiser scan page for ticket redemption
+    verify_url = url_for("main.organiser_scan_ticket", order_id=order.id, _external=True)
+    # VERSION 5 END
 
     # Create QR code image in memory
     qr_img = qrcode.make(verify_url)
@@ -124,7 +129,6 @@ def build_receipt_pdf(order):
     line_y -= 5 * mm
 
     if order.donation_cents:
-        c.drawString(20 * mm, line_y, "Donation")
         c.drawRightString(width - 20 * mm, line_y, f"€{order.donation_cents/100:0.2f}")
         line_y -= 5 * mm
     # VERSION 4 END
@@ -313,18 +317,6 @@ def require_role(*roles):
 
 # VERSION 3 START
 
-# Reference: Flask-Login user session management (Flask-Login, 2026)
-# https://flask-login.readthedocs.io/en/latest/
-# Used here for: login_user(), logout_user(), @login_required, and loading the logged-in user from a stored ID.
-
-def get_current_user():
-    # Get the logged-in user ID from the session
-    uid = session.get("user_id")
-    # If no user is logged in, return None
-    if not uid:
-        return None
-    return User.query.get(uid)
-
 @bp.route("/register", methods=["GET", "POST"])
 def register():
     # Create the registration form
@@ -488,14 +480,24 @@ def index():
     # Reference: SQLAlchemy Query Guide – filtering and ordering (SQLAlchemy, 2024)
     # https://docs.sqlalchemy.org/en/20/orm/queryguide/index.html
     events = Event.query.filter_by(published=True).order_by(Event.starts_at.asc()).all()
-    return render_template("index.html", events=events)
+    # VERSION 5 START
+    # Real platform stats for homepage
+    charities_count = Charity.query.filter_by(verified=True).count()
+    tickets_count = db.session.query(func.coalesce(func.sum(Order.qty), 0)).filter_by(status='PAID').scalar() or 0
+    funds_raised = db.session.query(func.coalesce(func.sum(Order.total_cents), 0)).filter_by(status='PAID').scalar() or 0
+    funds_raised_eur = funds_raised / 100
+    return render_template("index.html", events=events, charities_count=charities_count, tickets_count=tickets_count, funds_raised_eur=funds_raised_eur)
+    # VERSION 5 END
 
 # VERSION 2 START
 # Show a list of all published events
 @bp.route("/events")
 def events_list():
+    # VERSION 5 START
     # Get all events that are marked as published, sorted by start date
-    events = Event.query.filter_by(published=True).order_by(Event.starts_at.asc()).all()
+    # Exclude completed events so only active events appear on the public listing
+    events = Event.query.filter_by(published=True, is_completed=False).order_by(Event.starts_at.asc()).all()
+    # VERSION 5 END
     # Display them on the events page
     return render_template("events.html", events=events)
 # VERSION 2 END
@@ -535,7 +537,9 @@ def event_buy(event_id):
         order = Order(
             event_id=ev.id,
             # VERSION 2 START
-            user_id=None,
+            # VERSION 5 START
+            user_id=current_user.id if current_user.is_authenticated else None,
+            # VERSION 5 END
             email=form.email.data.lower(),
             qty=qty,
             donation_cents=donation_c,
@@ -751,6 +755,57 @@ def order_verify(order_id):
     # Show the verification page
     return render_template("order_verify.html", order=order, ok=ok)
 # VERSION 4 END
+
+# VERSION 5 START
+# Organiser scans QR code - redeems all unredeemed tickets and confirms legitimacy
+@bp.route("/organiser/scan/<int:order_id>", methods=["GET", "POST"])
+@login_required
+def organiser_scan_ticket(order_id):
+    guard = require_role(ROLE_ORG, ROLE_ADMIN)
+    if guard:
+        return guard
+
+    order = Order.query.get_or_404(order_id)
+    # Get the organiser profile for the logged-in user
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+
+    # Verify this organiser owns the event
+    if not org or order.event.organiser_id != org.id:
+        return render_template("organiser_scan_result.html", success=False, message="You do not have permission to scan tickets for this event.", order=None, tickets=None)
+    # Block redemption if the order has not been paid
+    if order.status != "PAID":
+        return render_template("organiser_scan_result.html", success=False, message="This order has not been paid.", order=order, tickets=None)
+    # Reference: SQLAlchemy Session.expire_all() — forcing fresh state from the database (SQLAlchemy, 2025)
+    # https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.expire_all
+    # Expire session cache so ticket states are always fresh from the database
+    db.session.expire_all()
+    tickets = Ticket.query.filter_by(order_id=order.id).all()
+    # Check if all tickets are already redeemed or refunded before any action
+    already_all_redeemed = all(t.redeemed or t.refunded for t in tickets)
+    newly_redeemed = []
+
+    if request.method == "POST":
+        # Loop through tickets and redeem any that are still valid
+        for ticket in tickets:
+            if not ticket.redeemed and not ticket.refunded:
+                ticket.redeemed = True
+                ticket.redeemed_at = datetime.utcnow()
+                newly_redeemed.append(ticket)
+                # Log each redemption to the audit trail
+                log_action(
+                    action="TICKET_REDEEMED",
+                    entity_type="Ticket",
+                    entity_id=ticket.id,
+                    meta={"ticket_code": ticket.code, "order_id": order.id,
+                          "event_id": order.event_id, "via": "qr_scan"}
+                )
+        db.session.commit()
+        # Expire again so the template reflects the updated redeemed states
+        db.session.expire_all()
+        tickets = Ticket.query.filter_by(order_id=order.id).all()
+
+    return render_template("organiser_scan_result.html", success=True, message=None, order=order, tickets=tickets, newly_redeemed=newly_redeemed, already_all_redeemed=already_all_redeemed)
+# VERSION 5 END
 
 # Download the PDF receipt for an order
 @bp.route("/orders/<int:order_id>/receipt")
@@ -1025,7 +1080,7 @@ def report_allocations():
 
     # Get all event IDs involved in paid orders
     event_ids = list({o.event_id for o in paid if o.event_id})
-    # Load beneficiary splits for those events
+    # Load beneficiary splits for those events (beneficiary split and charity details)
     ben_rows = (
         db.session.query(EventBeneficiary, Charity)
         .join(Charity, Charity.id == EventBeneficiary.charity_id)
@@ -1033,7 +1088,7 @@ def report_allocations():
         .all()
     )
 
-    # Group beneficiaries by event
+    # Group beneficiaries by event_id, store charity and %
     ben_by_event = {}
     for eb, ch in ben_rows:
         ben_by_event.setdefault(eb.event_id, []).append((ch, eb.allocation_percent or 0))
@@ -1042,12 +1097,15 @@ def report_allocations():
     for o in paid:
         if not o.event_id:
             continue
+        # Get beneficiary list for this event
         splits = ben_by_event.get(o.event_id, [])
         if not splits:
             continue
-
+        # Loop through beneficiaries
         for ch, pct in splits:
+            # Store charity ID in variable
             key = ch.id
+            # If charity is not in map, create entry
             alloc_map.setdefault(key, {
                 "charity_name": ch.name,
                 "charity_reg": getattr(ch, "reg_number", None) or getattr(ch, "registration_number", None),
@@ -1082,12 +1140,7 @@ def report_allocations():
     }
 
     # Render the allocation report
-    return render_template(
-        "report_allocations.html",
-        stats=stats,
-        allocations=allocations,
-        paid_orders=paid_orders,
-    )
+    return render_template("report_allocations.html", stats=stats, allocations=allocations, paid_orders=paid_orders,)
 
 
 # Export audit logs as a CSV file
@@ -1365,6 +1418,16 @@ def event_new():
             ticket_price_cents=cents(form.ticket_price_eur.data),
             published=bool(form.published.data),
         )
+        # VERSION 5 START
+        # Reference: Flask file uploads (Pallets Projects, 2025)
+        # https://flask.palletsprojects.com/en/stable/patterns/fileuploads/
+        # https://flask.palletsprojects.com/en/stable/api/#flask.Request.files
+        # Read uploaded cover image file if provided and store binary data and mimetype on the event
+        img = request.files.get('cover_image')
+        if img and img.filename:
+            ev.cover_image = img.read()
+            ev.cover_image_mimetype = img.mimetype
+        # VERSION 5 END
         db.session.add(ev)
         db.session.flush()
 
@@ -1407,15 +1470,76 @@ def organiser_events():
         flash("No organiser profile linked to your account.", "warning")
         return redirect(url_for("main.index"))
 
-    # Fetch only events created by this organiser
-    events = (
+    # VERSION 5 START
+    # Fetch active (not completed) events
+    active_events = (
         Event.query
-        .filter_by(organiser_id=org.id)
-        .order_by(Event.created_at.desc())
+        .filter_by(organiser_id=org.id, is_completed=False)
+        .order_by(Event.starts_at.desc())
         .all()
     )
-    # Render organiser events page
-    return render_template("organiser_events.html", events=events, org=org)
+    
+    # Fetch past (completed) events with their analytics data
+    past_events = (
+        Event.query
+        .filter_by(organiser_id=org.id, is_completed=True)
+        .order_by(Event.completed_at.desc())
+        .all()
+    )
+    
+    # Calculate analytics for each past event
+    past_events_with_reports = []
+    for ev in past_events:
+        # Query only paid orders for this event
+        paid_orders_q = Order.query.filter_by(event_id=ev.id, status="PAID")
+        paid_orders_count = paid_orders_q.count()
+        
+        # Calculate totals using SQL aggregation
+        totals = paid_orders_q.with_entities(
+            func.coalesce(func.sum(Order.qty), 0),
+            func.coalesce(func.sum(Order.total_cents), 0),
+            func.coalesce(func.sum(Order.donation_cents), 0),
+        ).first()
+        
+        tickets_sold = int(totals[0] or 0)
+        total_raised_cents = int(totals[1] or 0)
+        donation_total_cents = int(totals[2] or 0)
+        avg_order_cents = int(total_raised_cents / paid_orders_count) if paid_orders_count else 0
+
+        # Calculate beneficiary allocations
+        allocations = []
+        for b in ev.beneficiaries:
+            allocations.append({
+                "charity_name": b.charity.name if b.charity else "Unknown charity",
+                "percent": b.allocation_percent,
+                "estimated_cents": int(round((total_raised_cents * (b.allocation_percent or 0)) / 100)),
+            })
+        
+        # Add event with its report data
+        past_events_with_reports.append({
+            "event": ev,
+            "tickets_sold": tickets_sold,
+            "orders_count": paid_orders_count,
+            "total_raised_cents": total_raised_cents,
+            "donation_cents": donation_total_cents,
+            "avg_order_cents": avg_order_cents,
+            "allocations": allocations,
+        })
+
+    # Fetch refund requests for this organiser's events
+    refund_requests = (
+        db.session.query(RefundRequest)
+        .join(Order, RefundRequest.order_id == Order.id)
+        .join(Event, Order.event_id == Event.id)
+        .filter(Event.organiser_id == org.id)
+        .order_by(RefundRequest.requested_at.desc())
+        .all()
+    )
+    pending_refund_count = sum(1 for r in refund_requests if r.status == "PENDING")
+    
+    # Render organiser events page with both active and past events
+    return render_template("organiser_events.html", active_events=active_events, past_events=past_events_with_reports, org=org, refund_requests=refund_requests, pending_refund_count=pending_refund_count)
+    # VERSION 5 END
 
 # Edit an existing event owned by the organiser
 @bp.route("/organiser/events/<int:event_id>/edit", methods=["GET", "POST"])
@@ -1484,6 +1608,18 @@ def organiser_event_edit(event_id):
         ev.ticket_price_cents = cents(form.ticket_price_eur.data)
         ev.published = bool(form.published.data)
 
+        # VERSION 5 START
+        # If a new image is uploaded, store the binary data and mimetype on the event
+        # If the remove checkbox is ticked and no new image is provided, clear the image
+        img = request.files.get('cover_image')
+        if img and img.filename:
+            ev.cover_image = img.read()
+            ev.cover_image_mimetype = img.mimetype
+        elif request.form.get('remove_cover_image') == '1':
+            ev.cover_image = None
+            ev.cover_image_mimetype = None
+        # VERSION 5 END
+
         # Remove existing beneficiaries
         EventBeneficiary.query.filter_by(event_id=ev.id).delete()
         db.session.flush()
@@ -1509,6 +1645,121 @@ def organiser_event_edit(event_id):
     # Render edit page
     return render_template("organiser_event_edit.html", form=form, ev=ev)
 
+# VERSION 5 START
+@bp.route("/organiser/orders/<int:order_id>")
+@login_required
+def organiser_order_detail(order_id):
+
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+    
+    # Get order and verify organiser owns the event
+    order = Order.query.get_or_404(order_id)
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    
+    if not org or order.event.organiser_id != org.id:
+        flash("You don't have permission to view this order.", "danger")
+        return redirect(url_for("main.organiser_events"))
+    
+    # Expire session cache so ticket states (redeemed/refunded) are always fresh
+    db.session.expire_all()
+    # Get all tickets for this order
+    tickets = Ticket.query.filter_by(order_id=order.id).all()
+    
+    return render_template("organiser_order_detail.html", order=order, tickets=tickets)
+
+
+@bp.route("/organiser/tickets/<int:ticket_id>/redeem", methods=["POST"])
+@login_required
+def organiser_ticket_redeem(ticket_id):
+
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+    
+    ticket = Ticket.query.get_or_404(ticket_id)
+    order = ticket.order
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    
+    # Verify organiser owns the event
+    if not org or order.event.organiser_id != org.id:
+        flash("You don't have permission to redeem this ticket.", "danger")
+        return redirect(url_for("main.organiser_events"))
+    
+    # Check if already redeemed or refunded
+    if ticket.redeemed:
+        flash(f"Ticket {ticket.code} is already redeemed.", "warning")
+    elif ticket.refunded:
+        flash(f"Ticket {ticket.code} has been refunded and cannot be redeemed.", "warning")
+    else:
+        # Mark as redeemed
+        ticket.redeemed = True
+        ticket.redeemed_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Log the action
+        log_action(
+            action="TICKET_REDEEMED",
+            entity_type="Ticket",
+            entity_id=ticket.id,
+            meta={
+                "ticket_code": ticket.code,
+                "order_id": order.id,
+                "event_id": order.event_id
+            }
+        )
+        
+        flash(f"Ticket {ticket.code} redeemed successfully!", "success")
+    
+    return redirect(url_for("main.organiser_order_detail", order_id=order.id))
+
+
+@bp.route("/organiser/tickets/<int:ticket_id>/refund", methods=["POST"])
+@login_required
+def organiser_ticket_refund(ticket_id):
+
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+    
+    ticket = Ticket.query.get_or_404(ticket_id)
+    order = ticket.order
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    
+    # Verify organiser owns the event
+    if not org or order.event.organiser_id != org.id:
+        flash("You don't have permission to refund this ticket.", "danger")
+        return redirect(url_for("main.organiser_events"))
+    
+    # Check if already refunded or redeemed
+    if ticket.refunded:
+        flash(f"Ticket {ticket.code} is already refunded.", "warning")
+    elif ticket.redeemed:
+        flash(f"Ticket {ticket.code} has been redeemed and cannot be refunded.", "warning")
+    else:
+        # Mark as refunded
+        ticket.refunded = True
+        ticket.refunded_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Log the action
+        log_action(
+            action="TICKET_REFUNDED",
+            entity_type="Ticket",
+            entity_id=ticket.id,
+            meta={
+                "ticket_code": ticket.code,
+                "order_id": order.id,
+                "event_id": order.event_id
+            }
+        )
+        
+        flash(f"Ticket {ticket.code} marked as refunded. Remember to process Stripe refund separately.", "success")
+    
+    return redirect(url_for("main.organiser_order_detail", order_id=order.id))
+# VERSION 5 END
+
 # Show analytics for a specific organiser-owned event
 @bp.route("/organiser/events/<int:event_id>/analytics")
 @login_required
@@ -1531,7 +1782,7 @@ def organiser_event_analytics(event_id):
         func.coalesce(func.sum(Order.total_cents), 0),
         func.coalesce(func.sum(Order.donation_cents), 0),
     ).first()
-    # Extract totals
+    # Extract totals from tuple
     tickets_sold = int(totals[0] or 0)
     total_raised_cents = int(totals[1] or 0)
     donation_total_cents = int(totals[2] or 0)
@@ -1546,18 +1797,175 @@ def organiser_event_analytics(event_id):
             "percent": b.allocation_percent,
             "estimated_cents": int(round((total_raised_cents * (b.allocation_percent or 0)) / 100)),
         })
+    
+    # VERSION 5 START
+    # Get all PAID orders for this event with ticket counts
+    orders = (
+        Order.query
+        .filter_by(event_id=ev.id, status="PAID")
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+    
+    # Enhance orders with ticket status counts
+    orders_with_tickets = []
+    for order in orders:
+        tickets = Ticket.query.filter_by(order_id=order.id).all()
+        total_tickets = len(tickets)
+        redeemed_count = sum(1 for t in tickets if t.redeemed)
+        refunded_count = sum(1 for t in tickets if t.refunded)
+        
+        orders_with_tickets.append({
+            "order": order,
+            "total_tickets": total_tickets,
+            "redeemed_count": redeemed_count,
+            "refunded_count": refunded_count,
+        })
+    # VERSION 5 END
+
     # Render analytics page
-    return render_template(
-        "organiser_event_analytics.html",
-        ev=ev,
-        paid_orders_count=paid_orders_count,
-        tickets_sold=tickets_sold,
-        total_raised_cents=total_raised_cents,
-        donation_total_cents=donation_total_cents,
-        avg_order_cents=avg_order_cents,
-        allocations=allocations,
+    return render_template("organiser_event_analytics.html", ev=ev, paid_orders_count=paid_orders_count, tickets_sold=tickets_sold, total_raised_cents=total_raised_cents, donation_total_cents=donation_total_cents, avg_order_cents=avg_order_cents, allocations=allocations,
+        # VERSION 5 START
+        orders=orders_with_tickets, 
+        # VERSION 5 END
     )
 # VERSION 3 END
+
+# VERSION 5 START
+@bp.route("/organiser/events/<int:event_id>/export-payouts")
+@login_required
+def organiser_export_payouts(event_id):
+
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+
+    # Verify organiser owns this event
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+
+    # Get all PAID orders for this event
+    paid_orders = Order.query.filter_by(event_id=ev.id, status="PAID").all()
+
+    # Calculate totals
+    total_raised_cents = sum(o.total_cents or 0 for o in paid_orders)
+    tickets_sold = sum(o.qty or 0 for o in paid_orders)
+
+    # Calculate allocations per beneficiary
+    payout_data = []
+    for beneficiary in ev.beneficiaries:
+        charity_name = beneficiary.charity.name if beneficiary.charity else "Unknown"
+        charity_number = beneficiary.charity.charity_number if beneficiary.charity else "N/A"
+        percent = beneficiary.allocation_percent or 0
+        amount_cents = int(round((total_raised_cents * percent) / 100))
+        amount_eur = amount_cents / 100
+
+        payout_data.append({
+            "charity_name": charity_name,
+            "charity_number": charity_number,
+            "percent": percent,
+            "amount_eur": amount_eur,
+        })
+
+    # Create CSV in memory
+    si = StringIO()
+    writer = csv.writer(si)
+
+    # Header
+    writer.writerow([
+        "Event",
+        "Event Date",
+        "Total Raised (EUR)",
+        "Tickets Sold",
+        "Charity Name",
+        "Charity Number",
+        "Allocation %",
+        "Amount Due (EUR)"
+    ])
+
+    # Data rows
+    for item in payout_data:
+        writer.writerow([
+            ev.title,
+            ev.starts_at.strftime('%Y-%m-%d'),
+            f"{total_raised_cents / 100:.2f}",
+            tickets_sold,
+            item["charity_name"],
+            item["charity_number"],
+            f"{item['percent']}%",
+            f"{item['amount_eur']:.2f}"
+        ])
+
+    # Log the export
+    log_action(
+        action="PAYOUT_SUMMARY_EXPORTED",
+        entity_type="Event",
+        entity_id=ev.id,
+        meta={"event_title": ev.title}
+    )
+
+    # Return CSV as downloadable file
+    output = si.getvalue()
+    si.close()
+
+    filename = f"payout_summary_event_{ev.id}_{ev.title.replace(' ', '_')}.csv"
+
+    return Response(
+        output,
+        mimetype="text/csv",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
+
+# Helper: sends impact summary emails to all unique paid attendees for an event.
+# Returns a dict with emails_sent and emails_failed counts.
+# AI Reference: https://chatgpt.com/share/699701ad-b814-8004-a7e4-87f0f5dcd97e
+def _send_impact_summaries_for_event(ev):
+    paid_orders = Order.query.filter_by(event_id=ev.id, status="PAID").all()
+    if not paid_orders:
+        return {"emails_sent": 0, "emails_failed": 0}
+    total_raised_cents = sum(o.total_cents or 0 for o in paid_orders)
+    total_raised_eur = total_raised_cents / 100
+    tickets_sold = sum(o.qty or 0 for o in paid_orders)
+    allocations = []
+    for beneficiary in ev.beneficiaries:
+        charity_name = beneficiary.charity.name if beneficiary.charity else "Unknown"
+        percent = beneficiary.allocation_percent or 0
+        amount_cents = int(round((total_raised_cents * percent) / 100))
+        allocations.append({
+            "charity_name": charity_name,
+            "percent": percent,
+            "amount_eur": amount_cents / 100,
+        })
+    emails_sent = 0
+    emails_failed = 0
+    sent_to = set()
+    for order in paid_orders:
+        email = order.email.lower()
+        if email in sent_to:
+            continue
+        sent_to.add(email)
+        try:
+            send_impact_summary_email(
+                mail=mail,
+                to_email=email,
+                event_title=ev.title,
+                event_date=ev.starts_at.strftime('%d %B %Y'),
+                user_contribution_eur=order.total_cents / 100,
+                total_raised_eur=total_raised_eur,
+                tickets_sold=tickets_sold,
+                allocations=allocations,
+            )
+            emails_sent += 1
+        except Exception as e:
+            current_app.logger.error(f"Failed to send impact summary to {email}: {e}")
+            emails_failed += 1
+    log_action(
+        action="IMPACT_SUMMARIES_SENT",
+        entity_type="Event",
+        entity_id=ev.id,
+        meta={"event_title": ev.title, "emails_sent": emails_sent, "emails_failed": emails_failed}
+    )
+    return {"emails_sent": emails_sent, "emails_failed": emails_failed}
+# VERSION 5 END
 
 # VERSION 4 START
 @bp.route("/organiser/events/<int:event_id>/complete", methods=["POST"])
@@ -1586,6 +1994,18 @@ def organiser_event_complete(event_id):
             )
         except Exception:
             pass
+
+        # VERSION 5 START
+        # Send impact summary emails to all unique paid attendees
+        result = _send_impact_summaries_for_event(ev)
+        
+        emails_sent = result["emails_sent"]
+        if emails_sent > 0:
+            flash(f"Event completed and impact summaries sent to {emails_sent} attendees.", "success")
+        else:
+            flash("Event marked as completed.", "success")
+        # VERSION 5 END
+
     else:
         ev.is_completed = False
         ev.completed_at = None
@@ -1603,5 +2023,184 @@ def organiser_event_complete(event_id):
     db.session.commit()
     return redirect(url_for("main.organiser_events"))
 # VERSION 4 END
+
+# VERSION 5 START
+@bp.route("/event/<int:event_id>/cover")
+def event_cover(event_id):
+    ev = Event.query.get_or_404(event_id)
+    if not ev.cover_image:
+        abort(404)
+    return Response(ev.cover_image, mimetype=ev.cover_image_mimetype or 'image/jpeg')
+
+@bp.route("/organiser/events/<int:event_id>/send-impact-summaries", methods=["POST"])
+@login_required
+def send_event_impact_summaries(event_id):
+
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+    
+    # Verify organiser owns this event
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+    
+    # Event must be completed
+    if not ev.is_completed:
+        flash("Event must be marked as completed before sending impact summaries.", "warning")
+        return redirect(url_for("main.organiser_event_analytics", event_id=ev.id))
+    
+    # Get all PAID orders for this event
+    paid_orders = Order.query.filter_by(event_id=ev.id, status="PAID").all()
+    
+    if not paid_orders:
+        flash("No paid orders found for this event.", "info")
+        return redirect(url_for("main.organiser_event_analytics", event_id=ev.id))
+    
+    # Send impact summary emails via shared helper
+    result = _send_impact_summaries_for_event(ev)
+
+    # Send email to each unique customer
+    emails_sent = result["emails_sent"]
+    emails_failed = result["emails_failed"]
+    
+    if emails_failed > 0:
+        flash(f"Impact summaries sent to {emails_sent} attendees. {emails_failed} failed.", "warning")
+    else:
+        flash(f"Impact summaries successfully sent to {emails_sent} attendees!", "success")
+    
+    return redirect(url_for("main.organiser_event_analytics", event_id=ev.id))
+
+# USER: View past orders
+@bp.route("/my-orders")
+@login_required
+def my_orders():
+    # Show all paid orders belonging to the current user
+    orders = (
+        Order.query
+        .filter_by(user_id=current_user.id, status="PAID")
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+    # Attach any existing refund request to each order for display
+    orders_data = []
+    for order in orders:
+        refund_req = RefundRequest.query.filter_by(order_id=order.id).order_by(RefundRequest.requested_at.desc()).first()
+        orders_data.append({"order": order, "refund_request": refund_req})
+
+    return render_template("my_orders.html", orders_data=orders_data)
+
+
+# USER: Submit a refund request
+@bp.route("/orders/<int:order_id>/request-refund", methods=["POST"])
+@login_required
+def request_refund(order_id):
+    order = Order.query.get_or_404(order_id)
+
+    # Make sure the order belongs to the current user
+    if order.user_id != current_user.id:
+        abort(403)
+
+    # Don't allow duplicate pending requests
+    existing = RefundRequest.query.filter_by(order_id=order.id, status="PENDING").first()
+    if existing:
+        flash("You already have a pending refund request for this order.", "warning")
+        return redirect(url_for("main.my_orders"))
+
+    reason = request.form.get("reason", "").strip()
+
+    refund_req = RefundRequest(
+        order_id=order.id,
+        user_id=current_user.id,
+        reason=reason or None,
+    )
+    db.session.add(refund_req)
+    db.session.commit()
+
+    log_action(
+        action="REFUND_REQUESTED",
+        entity_type="Order",
+        entity_id=order.id,
+        meta={"reason": reason, "user_email": order.email}
+    )
+
+    flash("Refund request submitted. The organiser will review it shortly.", "success")
+    return redirect(url_for("main.my_orders"))
+
+
+# ORGANISER: View all pending refund requests across their events
+@bp.route("/organiser/refund-requests")
+@login_required
+def organiser_refund_requests():
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    if not org:
+        flash("No organiser profile found.", "warning")
+        return redirect(url_for("main.index"))
+
+    # Get all refund requests for orders belonging to this organiser's events
+    requests_data = (
+        db.session.query(RefundRequest)
+        .join(Order, RefundRequest.order_id == Order.id)
+        .join(Event, Order.event_id == Event.id)
+        .filter(Event.organiser_id == org.id)
+        .order_by(RefundRequest.requested_at.desc())
+        .all()
+    )
+
+    return render_template("organiser_refund_requests.html", requests=requests_data)
+
+# ORGANISER: Approve or deny a refund request
+@bp.route("/organiser/refund-requests/<int:req_id>/resolve", methods=["POST"])
+@login_required
+def organiser_resolve_refund(req_id):
+    guard = require_role(ROLE_ORG)
+    if guard:
+        return guard
+
+    org = Organiser.query.filter_by(user_id=current_user.id).first()
+    refund_req = RefundRequest.query.get_or_404(req_id)
+
+    # Verify the organiser owns this event
+    if refund_req.order.event.organiser_id != org.id:
+        abort(403)
+
+    decision = request.form.get("decision")  # "approve" or "deny"
+    organiser_note = request.form.get("organiser_note", "").strip()
+
+    if decision not in ("approve", "deny"):
+        flash("Invalid decision.", "danger")
+        return redirect(url_for("main.organiser_refund_requests"))
+
+    approved = (decision == "approve")
+    refund_req.status = "APPROVED" if approved else "DENIED"
+    refund_req.resolved_at = datetime.utcnow()
+    refund_req.organiser_note = organiser_note or None
+    db.session.commit()
+
+    log_action(
+        action="REFUND_APPROVED" if approved else "REFUND_DENIED",
+        entity_type="RefundRequest",
+        entity_id=refund_req.id,
+        meta={"order_id": refund_req.order_id, "note": organiser_note}
+    )
+
+    # Email the user
+    try:
+        send_refund_decision_email(
+            mail=mail,
+            to_email=refund_req.order.email,
+            event_title=refund_req.order.event.title,
+            approved=approved,
+            organiser_note=organiser_note,
+        )
+    except Exception as e:
+        current_app.logger.error(f"Refund decision email failed: {e}")
+
+    flash(f"Refund request {'approved' if approved else 'denied'} and user notified.", "success")
+    return redirect(url_for("main.organiser_events") + "#refunds")
+
+# VERSION 5 END
 
 # VERSION 1

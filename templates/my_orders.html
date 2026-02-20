@@ -1,0 +1,142 @@
+<!-- VERSION 5 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:20px">
+  <div>
+    <h2 style="margin:0 0 6px">My Orders</h2>
+    <p class="muted" style="margin:0">Your past ticket purchases and donation receipts.</p>
+  </div>
+  <a class="btn" href="{{ url_for('main.events_list') }}">Browse Events</a>
+</div>
+
+{% if orders_data %}
+  <div style="display:flex; flex-direction:column; gap:16px;">
+    {% for item in orders_data %}
+      {% set order = item.order %}
+      {% set refund_req = item.refund_request %}
+
+      <div class="card">
+
+        <!-- Top row: event info + status badge -->
+        <div class="row space-between" style="align-items:flex-start; flex-wrap:wrap; gap:12px;">
+
+          <div>
+            <h3 style="margin:0 0 4px;">{{ order.event.title }}</h3>
+            <p class="muted" style="margin:0; font-size:13px;">
+              {{ order.event.starts_at.strftime('%d %b %Y') }} &bull;
+              Order #{{ order.id }} &bull;
+              Placed {{ order.created_at.strftime('%d %b %Y') }}
+            </p>
+            <div style="margin-top:8px;">
+              <span style="font-size:1.1rem; font-weight:700;">
+                &euro;{{ '%.2f' % (order.total_cents / 100) }}
+              </span>
+              <span class="muted" style="font-size:13px; margin-left:6px;">
+                &bull; {{ order.qty }} ticket(s)
+              </span>
+              {% if order.donation_cents > 0 %}
+                <span class="muted" style="font-size:13px; margin-left:6px;">
+                  &bull; &euro;{{ '%.2f' % (order.donation_cents / 100) }} donation
+                </span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            {% if refund_req %}
+              {% if refund_req.status == 'PENDING' %}
+                <span class="badge" style="background:#FEF9C3; color:#854D0E;">Refund Pending</span>
+              {% elif refund_req.status == 'APPROVED' %}
+                <span class="badge" style="background:#DCFCE7; color:#166534;">Refund Approved</span>
+              {% elif refund_req.status == 'DENIED' %}
+                <span class="badge" style="background:#FEE2E2; color:#991B1B;">Refund Denied</span>
+              {% endif %}
+            {% else %}
+              <span class="badge verified">Paid</span>
+            {% endif %}
+          </div>
+
+        </div>
+
+        <!-- Refund decision message -->
+        {% if refund_req and refund_req.status != 'PENDING' %}
+          {% if refund_req.status == 'APPROVED' %}
+            <div style="margin-top:12px; padding:10px 14px; border-radius:8px; background:#F0FDF4; border:1px solid #BBF7D0;">
+              <p style="margin:0; font-size:13px;">
+                <strong>Refund approved</strong> on {{ refund_req.resolved_at.strftime('%d %b %Y') }}.
+                {% if refund_req.organiser_note %}
+                  &ldquo;{{ refund_req.organiser_note }}&rdquo;
+                {% endif %}
+              </p>
+            </div>
+          {% else %}
+            <div style="margin-top:12px; padding:10px 14px; border-radius:8px; background:#FFF1F2; border:1px solid #FECDD3;">
+              <p style="margin:0; font-size:13px;">
+                <strong>Refund denied</strong> on {{ refund_req.resolved_at.strftime('%d %b %Y') }}.
+                {% if refund_req.organiser_note %}
+                  &ldquo;{{ refund_req.organiser_note }}&rdquo;
+                {% endif %}
+              </p>
+            </div>
+          {% endif %}
+        {% endif %}
+
+        <!-- Actions -->
+        <div class="row" style="gap:8px; margin-top:14px; flex-wrap:wrap;">
+
+          {% if order.receipt_pdf %}
+            <a class="btn outline" href="{{ url_for('main.order_receipt', order_id=order.id) }}">
+              Download Receipt
+            </a>
+          {% endif %}
+
+          <a class="btn outline" href="{{ url_for('main.order_verify', order_id=order.id) }}">
+            Verify QR
+          </a>
+
+          {% if not refund_req and not order.event.is_completed %}
+            <button class="btn danger-outline"
+                    onclick="document.getElementById('refund-form-{{ order.id }}').style.display='block'; this.style.display='none';">
+              Request Refund
+            </button>
+          {% endif %}
+
+        </div>
+
+        <!-- Refund form (hidden until button clicked) -->
+        {% if not refund_req and not order.event.is_completed %}
+          <div id="refund-form-{{ order.id }}" style="display:none; margin-top:12px;">
+            <form method="post" action="{{ url_for('main.request_refund', order_id=order.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <textarea name="reason" rows="2"
+                        placeholder="Optional: explain why you'd like a refund..."
+                        style="width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px;"></textarea>
+              <div class="row" style="gap:8px;">
+                <button type="submit" class="btn danger">
+                  Submit Request
+                </button>
+                <button type="button" class="btn outline"
+                        onclick="document.getElementById('refund-form-{{ order.id }}').style.display='none'; document.querySelector('[onclick*=\'refund-form-{{ order.id }}\']').style.display='inline-block';">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        {% endif %}
+
+      </div>
+    {% endfor %}
+  </div>
+
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0;">You haven't placed any orders yet.</p>
+    <div style="margin-top:12px;">
+      <a class="btn primary" href="{{ url_for('main.events_list') }}">Browse Events</a>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}
+<!-- VERSION 5 END -->

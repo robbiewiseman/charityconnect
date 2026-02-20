@@ -6,10 +6,17 @@
 <!-- Page Heading and Description -->
 <!-- Reference: Jinja control structures (Pallets Projects, 2024)
 https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structures -->
-<h2 style="margin:0 0 6px">Admin — Verify Organisers & Charities</h2>
-<p class="muted" style="margin:0 0 12px">
-  Approve, reject, or move applications back to pending. Verified organisers can publish events and verified charities can be selected as beneficiaries.
-</p>
+<!-- VERSION 5 START -->
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:20px">
+  <div>
+    <h2 style="margin:0 0 6px">Admin &mdash; Verify Organisers &amp; Charities</h2>
+    <p class="muted" style="margin:0">
+      Approve, reject, or move applications back to pending. Verified organisers can publish events and verified charities can be selected as beneficiaries.
+    </p>
+  </div>
+  <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+</div>
+<!-- VERSION 5 END -->
 
 <!-- Main container card -->
 <div class="card">
@@ -87,19 +94,19 @@ https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structure
                     https://flask-wtf.readthedocs.io/en/1.2.x/csrf/ -->
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="verify">
-                    <button type="submit" class="btn primary">Verify</button>
+                    <button type="submit" class="btn success">Verify</button>
                   </form>
                   <form method="post" action="{{ url_for('main.admin_verify_action', org_id=org.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="reject">
-                    <button type="submit" class="btn outline">Reject</button>
+                    <button type="submit" class="btn danger-outline">Reject</button>
                   </form>
                 <!-- Verified organisers: admin can remove verification -->
                 {% elif org.status == 'verified' %}
                   <form method="post" action="{{ url_for('main.admin_verify_action', org_id=org.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="unverify">
-                    <button type="submit" class="btn outline">Unverify</button>
+                    <button type="submit" class="btn danger-outline">Unverify</button>
                   </form>
                 <!-- Rejected organisers: admin can reset them back to pending -->
                 {% elif org.status == 'rejected' %}
@@ -183,20 +190,20 @@ https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structure
                   <form method="post" action="{{ url_for('main.admin_verify_charity_action', charity_id=ch.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="verify">
-                    <button type="submit" class="btn primary">Verify</button>
+                    <button type="submit" class="btn success">Verify</button>
                   </form>
                   <!-- Reject charity -->
                   <form method="post" action="{{ url_for('main.admin_verify_charity_action', charity_id=ch.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="reject">
-                    <button type="submit" class="btn outline">Reject</button>
+                    <button type="submit" class="btn danger-outline">Reject</button>
                   </form>
                 {% elif ch.status == 'verified' %}
                   <!-- Move charity back to pending/unverified -->
                   <form method="post" action="{{ url_for('main.admin_verify_charity_action', charity_id=ch.id) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     <input type="hidden" name="action" value="unverify">
-                    <button type="submit" class="btn outline">Unverify</button>
+                    <button type="submit" class="btn danger-outline">Unverify</button>
                   </form>
                 {% elif ch.status == 'rejected' %}
                   <!-- Restore charity to pending state -->

@@ -16,7 +16,9 @@
       https://flask-wtf.readthedocs.io/en/1.2.x/quickstart/
       https://flask-wtf.readthedocs.io/en/1.2.x/form/
       https://flask-wtf.readthedocs.io/en/1.2.x/csrf/ -->
-      <form method="post" novalidate>
+      <!-- VERSION 5 START -->
+      <form method="post" novalidate enctype="multipart/form-data">
+      <!-- VERSION 5 START -->
         {{ form.hidden_tag() }}
 
         <!-- Selection: Event basics -->
@@ -161,6 +163,15 @@
             </label>
           </div>
         </div>
+
+        <!-- VERSION 5 START -->
+        <label for="{{ form.cover_image.id }}">Event Image (optional)</label>
+        <p class="muted" style="margin:-4px 0 8px; font-size:.85rem;">Upload a JPG or PNG. If left blank, a branded banner will be shown.</p>
+        {{ form.cover_image(class="") }}
+        {% for e in form.cover_image.errors %}
+          <div class="flash danger">{{ e }}</div>
+        {% endfor %}
+        <!-- VERSION 5 END -->
 
         <hr style="margin:16px 0; border:none; border-top:1px solid var(--line)">
 

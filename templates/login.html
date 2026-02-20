@@ -3,11 +3,13 @@
 {% block content %}
 
 <!-- Card container to centre the login form -->
-<div class="card" style="max-width:520px; margin:auto;">
+<!-- VERSION 5 START -->
+<div class="card form-page-card">
   <!-- Page heading -->
-  <h2 style="margin-top:0">Login</h2>
+  <h2 style="margin-top:0; margin-bottom:4px">Welcome back</h2>
   <!-- Short description under the heading -->
-  <p class="muted" style="margin-top:6px">Log in to access organiser and admin features.</p>
+  <p class="muted" style="margin:0 0 20px">Log in to access your account.</p>
+<!-- VERSION 5 END -->
 
   <!-- Login form -->
   <form method="post" novalidate>
@@ -38,7 +40,7 @@
     {% endif %}
 
     <!-- Form action buttons -->
-    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:16px">
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:20px">
       <!-- Cancel and return to homepage -->
       <a class="btn" href="{{ url_for('main.index') }}">Cancel</a>
       <!-- Submit button -->
@@ -47,10 +49,12 @@
   </form>
 
   <!-- Link to registration page -->
-  <div class="muted" style="margin-top:12px; font-size:.95rem">
-    No account yet? <a href="{{ url_for('main.register') }}">Register</a>
+  <!-- VERSION 5 START -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:.9rem; color:var(--muted)">
+    No account yet? <a href="{{ url_for('main.register') }}">Create one</a>
+  <!-- VERSION 5 END -->
   </div>
 </div>
 
 {% endblock %}
-<!-- VERSION 3 END>
+<!-- VERSION 3 END -->
