@@ -1,0 +1,25 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Restore database heading -->
+<h1>Restore Database</h1>
+<p class="muted">Upload a previously downloaded .json backup file to restore the database. This will overwrite existing data.</p>
+
+<!-- Upload form -->
+<div class="card" style="padding:18px; max-width:500px; margin-top:14px;">
+  <form method="POST" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="backup_file" style="font-weight:bold;">Backup file (.json)</label>
+    <input type="file" name="backup_file" id="backup_file" accept=".json" required style="display:block; margin:8px 0 14px;">
+    <button type="submit" class="btn" onclick="return confirm('This will overwrite all existing data. Are you sure?')">Restore</button>
+  </form>
+</div>
+
+<!-- Navigation back to admin dashboard -->
+<div style="margin-top:14px;">
+  <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->

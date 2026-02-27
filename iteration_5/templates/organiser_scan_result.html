@@ -1,0 +1,101 @@
+<!-- VERSION 5 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div style="max-width:560px; margin:0 auto;">
+
+  {% if not success %}
+    <!-- Invalid / unauthorised scan -->
+    <div class="card" style="text-align:center; padding:32px;">
+      <h2 style="margin:0 0 8px; color:#dc2626;">Scan Failed</h2>
+      <p class="muted" style="margin:0 0 20px;">{{ message }}</p>
+      <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+    </div>
+
+  {% elif already_all_redeemed and not newly_redeemed %}
+    <!-- All tickets already used -->
+    <div class="card" style="text-align:center; padding:32px;">
+      <h2 style="margin:0 0 8px; color:#d97706;">Already Redeemed</h2>
+      <p class="muted" style="margin:0 0 4px;">
+        <strong>{{ order.event.title }}</strong>
+      </p>
+      <p class="muted" style="margin:0 0 20px;">
+        All tickets for Order #{{ order.id }} have already been redeemed or refunded.
+      </p>
+      <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:20px; text-align:left;">
+        {% for ticket in tickets %}
+          <div class="row space-between" style="padding:6px 0; border-bottom:1px solid var(--line);">
+            <span style="font-family:monospace; font-size:.85rem;">{{ ticket.code }}</span>
+            {% if ticket.refunded %}
+              <span class="badge" style="background:#fee2e2; color:#991b1b;">Refunded</span>
+            {% else %}
+              <span class="badge" style="background:#dcfce7; color:#166534;">Redeemed {{ ticket.redeemed_at.strftime('%d %b %Y %H:%M') }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+    </div>
+
+  {% elif newly_redeemed %}
+    <!-- Successfully redeemed -->
+    <div class="card" style="text-align:center; padding:32px;">
+      <h2 style="margin:0 0 8px; color:#16a34a;">Tickets Confirmed</h2>
+      <p class="muted" style="margin:0 0 4px;">
+        <strong>{{ order.event.title }}</strong>
+      </p>
+      <p class="muted" style="margin:0 0 20px;">
+        Order #{{ order.id }} &bull; {{ order.email }}
+      </p>
+      <div style="border:1px solid #bbf7d0; border-radius:10px; padding:14px; background:#f0fdf4; margin-bottom:20px; text-align:left;">
+        <p style="margin:0 0 8px; font-size:.85rem; font-weight:600; color:#166534;">
+          {{ newly_redeemed|length }} ticket(s) just redeemed:
+        </p>
+        {% for ticket in newly_redeemed %}
+          <div style="font-family:monospace; font-size:.85rem; padding:4px 0; border-bottom:1px solid #bbf7d0; color:#166534;">
+            {{ ticket.code }}
+          </div>
+        {% endfor %}
+      </div>
+      <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+    </div>
+
+  {% else %}
+    <!-- GET request — show confirm button before redeeming -->
+    <div class="card" style="text-align:center; padding:32px;">
+      <h2 style="margin:0 0 8px;">Confirm Entry</h2>
+      <p class="muted" style="margin:0 0 4px;">
+        <strong>{{ order.event.title }}</strong>
+      </p>
+      <p class="muted" style="margin:0 0 20px;">
+        Order #{{ order.id }} &bull; {{ order.email }} &bull;
+        {{ order.qty }} ticket(s)
+      </p>
+      <div style="border:1px solid var(--line); border-radius:10px; padding:14px; margin-bottom:20px; text-align:left;">
+        {% for ticket in tickets %}
+          <div class="row space-between" style="padding:6px 0; border-bottom:1px solid var(--line);">
+            <span style="font-family:monospace; font-size:.85rem;">{{ ticket.code }}</span>
+            {% if ticket.refunded %}
+              <span class="badge" style="background:#fee2e2; color:#991b1b;">Refunded</span>
+            {% elif ticket.redeemed %}
+              <span class="badge" style="background:#dcfce7; color:#166534;">Already Redeemed</span>
+            {% else %}
+              <span class="badge" style="background:#eff6ff; color:#1d4ed8;">Valid</span>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row" style="gap:10px; justify-content:center;">
+          <button type="submit" class="btn success">Redeem &amp; Confirm Entry</button>
+          <a class="btn" href="{{ url_for('main.organiser_events') }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}
+<!-- VERSION 5 END -->

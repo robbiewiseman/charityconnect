@@ -31,6 +31,46 @@
     <!-- Download audit log as CSV -->
     <a class="btn" href="{{ url_for('main.audit_export') }}">Download CSV</a>
   </div>
+
+  <!-- VERSION 6 START -->
+  <!-- System health monitoring card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">System health</h3>
+    <p class="muted" style="margin:0 0 12px 0;">Monitor database, email, and payment service connectivity.</p>
+    <!-- Link to system health dashboard -->
+    <a class="btn" href="{{ url_for('main.admin_system_health') }}">Open</a>
+  </div>
+  <!-- Database backup card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Database backup</h3>
+    <p class="muted" style="margin:0 0 12px 0;">Download a full database backup as a JSON file.</p>
+    <!-- Direct download link for backup -->
+    <a class="btn" href="{{ url_for('main.admin_backup') }}">Download backup</a>
+  </div>
+  <!-- Database restore card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Database restore</h3>
+    <p class="muted" style="margin:0 0 12px 0;">Restore the database from a previous backup file.</p>
+    <!-- Link to restore upload page -->
+    <a class="btn" href="{{ url_for('main.admin_restore') }}">Restore</a>
+  </div>
+
+    <!-- Platform analytics card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Platform analytics</h3>
+    <p class="muted" style="margin:0 0 12px 0;">View system-wide metrics for events, donations, and users.</p>
+    <!-- Link to analytics dashboard -->
+    <a class="btn" href="{{ url_for('main.admin_analytics') }}">Open</a>
+  </div>
+
+    <!-- Failed payments card -->
+  <div class="card" style="padding:14px;">
+    <h3 style="margin:0 0 6px 0;">Failed payments</h3>
+    <p class="muted" style="margin:0 0 12px 0;">View orders with failed or incomplete payment attempts.</p>
+    <!-- Link to failed payments list -->
+    <a class="btn" href="{{ url_for('main.admin_failed_payments') }}">Open</a>
+  </div>
+  <!-- VERSION 6 END -->
 </div>
 
 {% endblock %}

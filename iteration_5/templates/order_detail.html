@@ -1,0 +1,105 @@
+<!-- Version 1 -->
+
+<!-- Order Confirmation Layout -->
+<!-- Reference: Jinja template inheritance block (Pallets Projects, 2024)
+https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- VERSION 5 START -->
+<div style="max-width:680px; margin:0 auto;">
+
+  <!-- Page header: order ID and status badge -->
+  <div class="row space-between" style="align-items:center; margin-bottom:20px; gap:12px;">
+    <!-- Dynamic heading: unique order identifier -->
+    <h2 style="margin:0">Order #{{ order.id }}</h2>
+    <!-- Shows the current state of the order (PAID, PENDING, etc.) -->
+    <span class="badge {% if order.status == 'PAID' %}verified{% endif %}">
+      {{ order.status }}
+    </span>
+  </div>
+
+  <!-- Primary order summary card -->
+  <div class="card">
+
+    <!-- SECTION: Event info -->
+    <div style="padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:16px;">
+      <div class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:6px;">Event</div>
+      <!-- Row 1: Event title -->
+      <h3 style="margin:0 0 4px;">{{ order.event.title }}</h3>
+      <!-- Event date/time (read-only display) -->
+      <!-- Reference: Python datetime strftime in templates (PSF, 2024)
+      https://docs.python.org/3/library/datetime.html#strftime-and-strptime-format-codes -->
+      <p class="muted" style="margin:0; font-size:.9rem;">
+        {{ order.event.starts_at.strftime('%d %b %Y') }} at {{ order.event.starts_at.strftime('%H:%M') }}
+        &bull; {{ order.event.venue or 'TBA' }}
+      </p>
+    </div>
+
+    <!-- SECTION: Order Details -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; padding-bottom:16px; border-bottom:1px solid var(--line); margin-bottom:16px;">
+      <!-- Purchaser's email address -->
+      <div>
+        <div class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:4px;">Email</div>
+        <div style="font-weight:600;">{{ order.email }}</div>
+      </div>
+      <!-- Ticket quantity -->
+      <div>
+        <div class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:4px;">Tickets</div>
+        <div style="font-weight:600;">{{ order.qty }}</div>
+      </div>
+      <!-- Total paid (calculated from order.total_cents in euros) -->
+      <div>
+        <div class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:4px;">Total paid</div>
+        <div style="font-size:1.4rem; font-weight:800; color:var(--brand-primary);">&euro;{{ '%.2f' % (order.total_cents / 100) }}</div>
+      </div>
+      {% if order.donation_cents > 0 %}
+      <!-- Donation amount if applicable -->
+      <div>
+        <div class="muted" style="font-size:.8rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; margin-bottom:4px;">Donation included</div>
+        <div style="font-weight:600;">&euro;{{ '%.2f' % (order.donation_cents / 100) }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- VERSION 2 START -->
+    {% if order.status == 'PAID' and order.receipt_pdf %}
+      <!-- Order is fully paid and a PDF exists, so show download + verification options -->
+      <div class="flash success" style="margin-bottom:16px;">
+        Your payment was successful. Your receipt is ready to download.
+      </div>
+      <!-- Reference: Flask url_for (Pallets Projects, 2024)
+      https://flask.palletsprojects.com/en/stable/quickstart/#url-building -->
+      <div class="row" style="gap:10px; flex-wrap:wrap;">
+        <a class="btn primary" href="{{ url_for('main.order_receipt', order_id=order.id) }}">
+          Download Receipt (PDF)
+        </a>
+        <a class="btn outline" href="{{ url_for('main.order_verify', order_id=order.id) }}">
+          Verify via QR
+        </a>
+        <a class="btn" href="{{ url_for('main.my_orders') }}">My Orders</a>
+        <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
+      </div>
+    {% elif order.status == 'PAID' %}
+      <!-- Payment succeeded but the background task hasn't produced the PDF yet -->
+      <div class="flash info" style="margin-bottom:16px;">
+        Receipt is being generated&hellip; refresh shortly.
+      </div>
+      <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
+    {% else %}
+      <!-- Payment hasn't cleared, so no receipt or verification available -->
+      <div class="flash warning" style="margin-bottom:16px;">
+        Payment pending. If you just paid, refresh in a moment.
+      </div>
+      <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
+    {% endif %}
+    <!-- VERSION 2 END -->
+
+  </div>
+
+</div>
+<!-- VERSION 5 END -->
+
+{% endblock %}
+
+<!-- Version 1 -->

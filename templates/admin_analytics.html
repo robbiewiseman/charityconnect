@@ -1,0 +1,70 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Platform analytics heading -->
+<h1>Platform Analytics</h1>
+<p class="muted">System-wide metrics across all events, donations, and users.</p>
+
+<!-- Metric cards grid -->
+<div class="grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; margin-top:14px;">
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Total Users</p>
+    <h2 style="margin:4px 0;">{{ metrics.total_users }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Verified Organisers</p>
+    <h2 style="margin:4px 0;">{{ metrics.verified_organisers }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Verified Charities</p>
+    <h2 style="margin:4px 0;">{{ metrics.verified_charities }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Total Events</p>
+    <h2 style="margin:4px 0;">{{ metrics.total_events }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Published Events</p>
+    <h2 style="margin:4px 0;">{{ metrics.published_events }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Completed Events</p>
+    <h2 style="margin:4px 0;">{{ metrics.completed_events }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Paid Orders</p>
+    <h2 style="margin:4px 0;">{{ metrics.paid_orders }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Tickets Sold</p>
+    <h2 style="margin:4px 0;">{{ metrics.total_tickets_sold }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Total Revenue</p>
+    <h2 style="margin:4px 0;">&euro;{{ "%.2f"|format(metrics.total_revenue_eur) }}</h2>
+  </div>
+
+  <div class="card" style="padding:14px; text-align:center;">
+    <p class="muted" style="margin:0;">Total Donations</p>
+    <h2 style="margin:4px 0;">&euro;{{ "%.2f"|format(metrics.total_donations_eur) }}</h2>
+  </div>
+
+</div>
+
+<!-- Navigation back to admin dashboard -->
+<div style="margin-top:18px;">
+  <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->

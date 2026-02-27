@@ -1,0 +1,60 @@
+<!-- VERSION 3 START -->
+ {% extends "base.html" %}
+{% block content %}
+
+<!-- Card container to centre the login form -->
+<!-- VERSION 5 START -->
+<div class="card form-page-card">
+  <!-- Page heading -->
+  <h2 style="margin-top:0; margin-bottom:4px">Welcome back</h2>
+  <!-- Short description under the heading -->
+  <p class="muted" style="margin:0 0 20px">Log in to access your account.</p>
+<!-- VERSION 5 END -->
+
+  <!-- Login form -->
+  <form method="post" novalidate>
+    <!-- Hidden fields (CSRF token, etc.) -->
+    {{ form.hidden_tag() }}
+
+    <!-- Email input -->
+    <label for="{{ form.email.id }}">Email</label>
+    {{ form.email(class="", placeholder="you@example.com") }}
+    <!-- Email validation errors -->
+    {% for e in form.email.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- Password input -->
+    <label for="{{ form.password.id }}">Password</label>
+    {{ form.password(class="", placeholder="Your password") }}
+    <!-- Password validation errors -->
+    {% for e in form.password.errors %}
+      <div class="flash danger">{{ e }}</div>
+    {% endfor %}
+
+    <!-- CSRF validation errors (if any) -->
+    {% if form.csrf_token.errors %}
+      {% for e in form.csrf_token.errors %}
+        <div class="flash danger">{{ e }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- Form action buttons -->
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:20px">
+      <!-- Cancel and return to homepage -->
+      <a class="btn" href="{{ url_for('main.index') }}">Cancel</a>
+      <!-- Submit button -->
+      {{ form.submit(class="btn primary") }}
+    </div>
+  </form>
+
+  <!-- Link to registration page -->
+  <!-- VERSION 5 START -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:.9rem; color:var(--muted)">
+    No account yet? <a href="{{ url_for('main.register') }}">Create one</a>
+  <!-- VERSION 5 END -->
+  </div>
+</div>
+
+{% endblock %}
+<!-- VERSION 3 END -->

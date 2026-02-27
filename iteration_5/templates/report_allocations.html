@@ -1,0 +1,190 @@
+<!-- VERSION 4 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page container -->
+<div class="container" style="max-width:1100px; margin:0 auto; padding:18px 14px;">
+  <!-- Page header: title, description, and actions -->
+  <div class="row" style="justify-content:space-between; align-items:flex-end; gap:12px; margin-bottom:14px;">
+    <div>
+      <h2 style="margin:0;">Allocation and Donation Report</h2>
+      <p class="muted" style="margin:6px 0 0 0;">
+        Paid orders only. Use this to reconcile funds received and beneficiary allocations.
+      </p>
+    </div>
+
+    <!-- Back and print actions -->
+    <div class="row" style="gap:8px;">
+      <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+      <button class="btn" type="button" onclick="window.print()">Print</button>
+    </div>
+  </div>
+
+  <!-- Summary statistic cards -->
+  <div class="grid" style="display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:10px; margin-bottom:14px;">
+    <!-- Total paid orders -->
+    <div class="card" style="padding:14px;">
+      <div class="muted" style="font-size:12px;">Paid orders</div>
+      <div style="font-size:22px; font-weight:700; margin-top:4px;">{{ stats.paid_orders }}</div>
+    </div>
+
+    <!-- Tickets sold -->
+    <div class="card" style="padding:14px;">
+      <div class="muted" style="font-size:12px;">Tickets sold</div>
+      <div style="font-size:22px; font-weight:700; margin-top:4px;">{{ stats.tickets_sold }}</div>
+    </div>
+
+    <!-- Donation total -->
+    <div class="card" style="padding:14px;">
+      <div class="muted" style="font-size:12px;">Donations</div>
+      <div style="font-size:22px; font-weight:700; margin-top:4px;">€{{ "%.2f"|format(stats.donations_eur) }}</div>
+    </div>
+
+    <!-- Gross total including tickets and donations -->
+    <div class="card" style="padding:14px;">
+      <div class="muted" style="font-size:12px;">Gross total</div>
+      <div style="font-size:22px; font-weight:700; margin-top:4px;">€{{ "%.2f"|format(stats.total_eur) }}</div>
+    </div>
+  </div>
+
+  <!-- Beneficiary allocation breakdown -->
+  <div class="card" style="padding:14px; margin-bottom:14px;">
+    <div class="row" style="justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+      <h3 style="margin:0;">Allocation by charity</h3>
+      <div class="muted" style="font-size:12px;">Based on beneficiary splits per event</div>
+    </div>
+
+    {% if allocations and allocations|length %}
+      <!-- Allocation table -->
+      <div style="overflow:auto; border-radius:10px;">
+        <table style="width:100%; border-collapse:separate; border-spacing:0;">
+          <!-- Table header -->
+          <thead>
+            <tr>
+              <th style="text-align:left; padding:10px 12px; font-size:12px;" class="muted">Charity</th>
+              <th style="text-align:right; padding:10px 12px; font-size:12px;" class="muted">Allocated</th>
+              <th style="text-align:right; padding:10px 12px; font-size:12px;" class="muted">Share</th>
+            </tr>
+          </thead>
+          <!-- Allocation rows -->
+          <tbody>
+            {% for a in allocations %}
+              <tr>
+                <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.08);">
+                  <div style="font-weight:600;">{{ a.charity_name }}</div>
+                  {% if a.charity_reg %}
+                    <div class="muted" style="font-size:12px; margin-top:2px;">Reg: {{ a.charity_reg }}</div>
+                  {% endif %}
+                </td>
+                <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.08); font-weight:600;">
+                  €{{ "%.2f"|format(a.allocated_eur) }}
+                </td>
+                <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.08);">
+                  <span class="badge" style="padding:4px 8px; border-radius:999px; background:rgba(0,0,0,0.06); font-size:12px;">
+                    {{ "%.1f"|format(a.share_pct) }}%
+                  </span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <!-- Allocation totals -->
+          <tfoot>
+            <tr>
+              <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.12); font-weight:700;">Total</td>
+              <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.12); font-weight:700;">
+                €{{ "%.2f"|format(stats.allocated_total_eur) }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.12);" class="muted">100%</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    {% else %}
+      <!-- No allocation data -->
+      <p class="muted" style="margin:0;">No allocation data found.</p>
+    {% endif %}
+  </div>
+
+  <!-- Paid orders detail table -->
+  <div class="card" style="padding:14px;">
+    <div class="row" style="justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">
+      <h3 style="margin:0;">Paid orders</h3>
+      <div class="muted" style="font-size:12px;">For reconciliation and spot checks</div>
+    </div>
+
+    <div style="overflow:auto; border-radius:10px;">
+      <table style="width:100%; border-collapse:separate; border-spacing:0;">
+        <!-- Orders table header -->
+        <thead>
+          <tr>
+            <th style="text-align:left; padding:10px 12px; font-size:12px;" class="muted">Order</th>
+            <th style="text-align:left; padding:10px 12px; font-size:12px;" class="muted">Event</th>
+            <th style="text-align:right; padding:10px 12px; font-size:12px;" class="muted">Qty</th>
+            <th style="text-align:right; padding:10px 12px; font-size:12px;" class="muted">Donation</th>
+            <th style="text-align:right; padding:10px 12px; font-size:12px;" class="muted">Total</th>
+            <th style="text-align:left; padding:10px 12px; font-size:12px;" class="muted">Buyer</th>
+            <th style="text-align:left; padding:10px 12px; font-size:12px;" class="muted">When</th>
+          </tr>
+        </thead>
+
+        <!-- Orders list -->
+        <tbody>
+          {% for o in paid_orders %}
+            <tr>
+              <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.08); font-weight:600;">
+                #{{ o.id }}
+                <div class="muted" style="font-size:12px; margin-top:2px;">{{ o.status }}</div>
+              </td>
+
+              <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.08);">
+                <div style="font-weight:600;">{{ o.event_title }}</div>
+                {% if o.event_date %}
+                  <div class="muted" style="font-size:12px; margin-top:2px;">{{ o.event_date }}</div>
+                {% endif %}
+              </td>
+
+              <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.08);">{{ o.qty }}</td>
+              <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.08);">
+                €{{ "%.2f"|format(o.donation_eur) }}
+              </td>
+              <td style="padding:10px 12px; text-align:right; border-top:1px solid rgba(0,0,0,0.08); font-weight:600;">
+                €{{ "%.2f"|format(o.total_eur) }}
+              </td>
+
+              <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.08);">
+                <div style="font-weight:600;">{{ o.email }}</div>
+              </td>
+
+              <td style="padding:10px 12px; border-top:1px solid rgba(0,0,0,0.08);" class="muted">
+                {{ o.created_at }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if not paid_orders or paid_orders|length == 0 %}
+      <p class="muted" style="margin:10px 0 0 0;">No paid orders yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Responsive + print styles -->
+<style>
+  @media (max-width: 900px) {
+    .grid { grid-template-columns:repeat(2, minmax(0, 1fr)) !important; }
+  }
+  @media (max-width: 520px) {
+    .grid { grid-template-columns:1fr !important; }
+  }
+  @media print {
+    .btn, nav, footer { display:none !important; }
+    .card { box-shadow:none !important; }
+    body { background:#fff !important; }
+  }
+</style>
+
+{% endblock %}
+
+<!-- VERSION 4 END -->

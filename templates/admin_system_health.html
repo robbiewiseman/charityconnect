@@ -1,0 +1,34 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- System health dashboard heading -->
+<h1>System Health</h1>
+<p class="muted">Live connectivity status for all platform services.</p>
+
+<!-- Grid layout for service status cards -->
+<div class="grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap:14px; margin-top:14px;">
+  {% for check in checks %}
+  <!-- Individual service status card with coloured left border -->
+  {% if check.ok %}
+  <div class="card" style="padding:14px; border-left: 4px solid green;">
+    <h3 style="margin:0 0 6px 0;">{{ check.name }}</h3>
+    <p style="margin:0; color: green; font-weight:bold;">Healthy</p>
+  {% else %}
+  <div class="card" style="padding:14px; border-left: 4px solid red;">
+    <h3 style="margin:0 0 6px 0;">{{ check.name }}</h3>
+    <p style="margin:0; color: red; font-weight:bold;">Unhealthy</p>
+  {% endif %}
+    <!-- Detail text with connection info or error message -->
+    <p class="muted" style="margin:4px 0 0 0; font-size:0.85em;">{{ check.detail }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- Navigation back to admin dashboard -->
+<div style="margin-top:18px;">
+  <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->

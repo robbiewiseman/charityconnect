@@ -15,8 +15,5 @@ pillow
 wtforms-sqlalchemy
 openai
 werkzeug
-# VERSION 6 START
-gunicorn
-# VERSION 6 END
 
 # VERSION 3

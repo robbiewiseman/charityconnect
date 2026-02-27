@@ -1,0 +1,297 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Page header with title and navigation actions -->
+<div class="row space-between" style="align-items:flex-end; gap:16px; margin-bottom:12px">
+  <div>
+    <!-- Page title -->
+    <h2 style="margin:0 0 6px">Event Analytics</h2>
+    <!-- Event summary -->
+    <p class="muted" style="margin:0">
+      {{ ev.title }} • {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} • {{ ev.venue or 'TBA' }}
+    </p>
+  </div>
+  <!-- Action buttons -->
+  <div class="row" style="gap:10px">
+    <a class="btn outline" href="{{ url_for('main.organiser_event_edit', event_id=ev.id) }}">Edit Event</a>
+    <!-- VERSION 5 START -->
+    <a class="btn primary" href="{{url_for('main.organiser_export_payouts', event_id=ev.id) }}">Export Payout Summary</a>
+    <!-- VERSION 5 END -->
+    <a class="btn" href="{{ url_for('main.organiser_events') }}">Back to My Events</a>
+  </div>
+</div>
+
+<!-- Key metrics cards -->
+<div class="row" style="gap:16px; flex-wrap:wrap">
+  <!-- Paid orders count -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Paid orders</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">{{ paid_orders_count }}</div>
+  </div>
+
+  <!-- Tickets sold -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Tickets sold</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">{{ tickets_sold }}</div>
+  </div>
+
+  <!-- Total revenue -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Total raised</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">
+      €{{ '%.2f' % (total_raised_cents/100) }}
+    </div>
+  </div>
+
+  <!-- Donation totals and average order -->
+  <div class="card" style="flex:1 1 220px; min-width:220px">
+    <div class="muted" style="font-size:.85rem">Donation total</div>
+    <div style="font-size:1.6rem; font-weight:800; margin-top:4px">
+      €{{ '%.2f' % (donation_total_cents/100) }}
+    </div>
+    <div class="muted" style="margin-top:6px; font-size:.9rem">
+      Avg order: €{{ '%.2f' % (avg_order_cents/100) }}
+    </div>
+  </div>
+</div>
+
+<!-- Beneficiary allocation estimates -->
+<div class="card" style="margin-top:16px">
+  <h3 style="margin:0 0 10px">Estimated beneficiary split</h3>
+
+  {% if allocations %}
+    <!-- List each beneficiary allocation -->
+    <div style="display:flex; flex-direction:column; gap:10px">
+      {% for a in allocations %}
+        <div class="row space-between" style="border:1px solid var(--line); border-radius:10px; padding:10px 12px; background:#fff">
+          <div>
+            <strong>{{ a.charity_name }}</strong>
+            <div class="muted" style="font-size:.9rem">{{ a.percent }}%</div>
+          </div>
+          <div style="text-align:right">
+            <strong>€{{ '%.2f' % (a.estimated_cents/100) }}</strong>
+            <div class="muted" style="font-size:.85rem">estimate</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <!-- Message if no beneficiaries are configured -->
+    <p class="muted" style="margin:0">No beneficiaries configured yet.</p>
+  {% endif %}
+</div>
+
+<!-- AI advertising suggestions section -->
+<div class="card" style="margin-top:16px">
+  <div class="row" style="justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap">
+    <div>
+      <h3 style="margin:0 0 4px">Advertising suggestions</h3>
+      <p class="muted" style="margin:0">Generate promotion copy and targeting ideas for this event.</p>
+    </div>
+
+    <!-- Button to trigger AI advertising generation -->
+    <button id="adBtn" class="btn primary" type="button">Suggest advertising</button>
+  </div>
+
+  <!-- Status message shown while AI is generating -->
+  <div id="adStatus" class="muted" style="margin-top:10px; display:none">
+    Generating…
+  </div>
+
+  <!-- Output container for AI-generated advertising text -->
+  <pre id="adOutput" style="white-space:pre-wrap; margin:12px 0 0; display:none"></pre>
+</div>
+
+<script>
+  // Self-invoking function to avoid polluting global scope
+  (function () {
+    // Get references to UI elements
+    const btn = document.getElementById("adBtn");
+    const out = document.getElementById("adOutput");
+    const status = document.getElementById("adStatus");
+
+    // Exit early if button is missing
+    if (!btn) return;
+
+    // Handle click on "Suggest advertising"
+    btn.addEventListener("click", async () => {
+      // Disable button and show loading state
+      btn.disabled = true;
+      out.style.display = "none";
+      status.style.display = "block";
+      status.textContent = "Generating…";
+
+      try {
+        // Call backend AI route for advertising suggestions
+        const res = await fetch("{{ url_for('main.ai_ad_suggestions_for_event', event_id=ev.id) }}", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token() }}"
+          },
+          body: JSON.stringify({})
+        });
+
+        // Parse JSON response
+        const data = await res.json();
+
+        // Handle API or AI errors
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "AI request failed");
+        }
+
+        // Show AI output
+        status.style.display = "none";
+        out.textContent = data.text;
+        out.style.display = "block";
+      } catch (err) {
+        // Display error message to the user
+        status.textContent = (err && err.message) ? err.message : "Something went wrong.";
+      } finally {
+        // Re-enable button
+        btn.disabled = false;
+      }
+    });
+  })();
+</script>
+
+<!-- VERSION 5 START -->
+<!-- Orders List Section -->
+<h3 style="margin-top:32px; margin-bottom:16px;">Order Management</h3>
+
+{% if orders %}
+  <div class="card">
+    <table style="width:100%; border-collapse: collapse;">
+      <thead>
+        <tr style="border-bottom: 2px solid #E2E8F0; text-align: left;">
+          <th style="padding: 12px;">Order ID</th>
+          <th style="padding: 12px;">Email</th>
+          <th style="padding: 12px;">Date</th>
+          <th style="padding: 12px;">Tickets</th>
+          <th style="padding: 12px;">Status</th>
+          <th style="padding: 12px;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in orders %}
+          {% set order = item.order %}
+          <tr style="border-bottom: 1px solid #E2E8F0;">
+            <td style="padding: 12px; font-weight: 600;">#{{ order.id }}</td>
+            <td style="padding: 12px;">{{ order.email }}</td>
+            <td style="padding: 12px; font-size: 13px; color: #64748B;">
+              {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}
+            </td>
+            <td style="padding: 12px;">
+              <span style="font-weight: 600;">{{ item.total_tickets }}</span> ticket(s)
+              {% if item.redeemed_count > 0 %}
+                <br><span style="font-size: 12px; color: #16A34A;">{{ item.redeemed_count }} redeemed</span>
+              {% endif %}
+              {% if item.refunded_count > 0 %}
+                <br><span style="font-size: 12px; color: #DC2626;">{{ item.refunded_count }} refunded</span>
+              {% endif %}
+            </td>
+            <td style="padding: 12px;">
+              <span class="badge verified">PAID</span>
+            </td>
+            <td style="padding: 12px;">
+              <a class="btn outline" href="{{ url_for('main.organiser_order_detail', order_id=order.id) }}" style="font-size: 13px;">
+                Manage Tickets
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="card">
+    <p class="muted" style="margin:0;">No paid orders yet.</p>
+  </div>
+{% endif %}
+
+<!-- Beneficiary Payout Summary -->
+<div class="card" style="margin-top:16px">
+  <div class="row space-between" style="align-items:center; margin-bottom:12px;">
+    <h3 style="margin:0">Beneficiary Payout Summary</h3>
+    <a class="btn outline" href="{{ url_for('main.organiser_export_payouts', event_id=ev.id) }}">
+      Download CSV
+    </a>
+  </div>
+
+  {% if allocations %}
+    <div style="overflow:auto; border-radius:10px;">
+      <table style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="border-bottom:2px solid #E2E8F0; text-align:left;">
+            <th style="padding:12px; font-size:13px; color:#64748B;">Charity</th>
+            <th style="padding:12px; font-size:13px; color:#64748B; text-align:right;">Allocation %</th>
+            <th style="padding:12px; font-size:13px; color:#64748B; text-align:right;">Amount Due</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for alloc in allocations %}
+            <tr style="border-bottom:1px solid #E2E8F0;">
+              <td style="padding:12px; font-weight:600;">{{ alloc.charity_name }}</td>
+              <td style="padding:12px; text-align:right;">{{ alloc.percent }}%</td>
+              <td style="padding:12px; text-align:right; font-weight:700; color:#059669;">
+                €{{ '%.2f' % (alloc.estimated_cents / 100) }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr style="border-top:2px solid #E2E8F0;">
+            <td style="padding:12px; font-weight:700;">Total</td>
+            <td style="padding:12px; text-align:right; font-weight:700;">100%</td>
+            <td style="padding:12px; text-align:right; font-weight:700; color:#059669;">
+              €{{ '%.2f' % (total_raised_cents / 100) }}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div style="margin-top:12px; padding:12px; background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px;">
+      <p style="margin:0; font-size:13px; color:#166534;">
+        <strong>Note:</strong> This summary shows estimated amounts based on ticket sales and donations.
+        Export the CSV to share with charities for fund transfer verification.
+      </p>
+    </div>
+
+  {% else %}
+    <p class="muted" style="margin:0;">No beneficiaries configured for this event.</p>
+  {% endif %}
+</div>
+
+<!-- Impact Summary Section -->
+{% if ev.is_completed %}
+  <div class="card" style="margin-top:16px">
+    <div class="row space-between" style="align-items:center; gap:12px; flex-wrap:wrap">
+      <div>
+        <h3 style="margin:0 0 4px">Post-Event Impact Summaries</h3>
+        <p class="muted" style="margin:0">
+          Send impact summaries to all attendees showing how their contributions made a difference.
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('main.send_event_impact_summaries', event_id=ev.id) }}" style="display:inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn primary" 
+                onclick="return confirm('Send impact summary emails to all {{ paid_orders_count }} attendees?')">
+          Send Impact Summaries
+        </button>
+      </form>
+    </div>
+    
+    <div style="margin-top:12px; padding:12px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:8px;">
+      <p style="margin:0; font-size:13px; color:#1E40AF;">
+        <strong>What gets sent:</strong> Each attendee receives an email showing the total raised (€{{ '%.2f' % (total_raised_cents / 100) }}), 
+        how funds were allocated to charities, and their personal contribution amount.
+      </p>
+    </div>
+  </div>
+{% endif %}
+<!-- VERSION 5 END -->
+
+{% endblock %}
+<!-- VERSION 3 END -->

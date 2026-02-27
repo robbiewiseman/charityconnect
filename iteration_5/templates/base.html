@@ -1,0 +1,148 @@
+<!-- Version 1 -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- Metadata and page title -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <!-- Reference: Jinja variables (Pallets Projects, 2024)
+  https://jinja.palletsprojects.com/en/stable/templates/#variables -->
+  <title>{{ title or "CharityConnect" }}</title>
+  <!-- Link to global CSS stylesheet (stored in /static/style.css) -->
+  <!-- Reference: Flask url_for for static files (Pallets Projects, 2024)
+  https://flask.palletsprojects.com/en/stable/quickstart/#static-files -->
+  <!-- VERSION 5 START -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
+  <!-- VERSION 5 END -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<!-- Header Section -->
+<!-- VERSION 3 START -->
+<header class="site-header">
+  <div class="wrap nav-wrap">
+
+    <!-- Left side: brand logo and site name linking to homepage -->
+    <a href="{{ url_for('main.index') }}" class="brand" aria-label="CharityConnect home">
+      <img
+        src="{{ url_for('static', filename='images/CharityConnectLogo.jpg') }}"
+        alt="CharityConnect Logo"
+        class="brand-logo"
+      >
+    </a>
+
+    <!-- Mobile navigation toggle (checkbox-based, no JavaScript) -->
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle navigation">
+      <span></span><span></span><span></span>
+    </label>
+
+    <!-- Centre navigation links -->
+    <nav class="nav-links" aria-label="Primary navigation">
+      <!-- Public links -->
+      <a href="{{ url_for('main.index') }}">Home</a>
+      <a href="{{ url_for('main.events_list') }}">Events</a>
+
+      <!-- Organiser / admin-only links -->
+      {% if current_role in ['organiser','admin'] %}
+        <a href="{{ url_for('main.organiser_events') }}">My Events</a>
+      {% endif %}
+
+      <!-- VERSION 5 START -->
+      {% if current_user.is_authenticated and current_role == 'user', 'organiser' %}
+        <a href="{{ url_for('main.my_orders') }}">My Orders</a>
+      {% endif %}
+      <!-- VERSION 5 END -->
+
+      {% if current_role in ['organiser','admin'] %}
+        <a href="{{ url_for('main.event_new') }}">New Event</a>
+      {% endif %}
+
+      <!-- VERSION 4 START -->
+      <!-- Admin-only dashboard link -->
+      {% if current_user.is_authenticated and current_user.role == 'admin' %}
+        <a href="{{ url_for('main.admin_home') }}">Admin</a>
+      {% endif %}
+      <!-- VERSION 4 END -->
+
+
+    <!-- Right side actions -->
+    <div class="nav-actions">
+
+      <!-- Apply for organiser/charity verification -->
+      <a class="btn outline" href="{{ url_for('main.apply_verification') }}">
+        Apply for Verification
+      </a>
+
+      {% if current_user.is_authenticated %}
+        <!-- Account dropdown for logged-in users -->
+        <details class="account-menu">
+          <!-- Dropdown trigger showing avatar and user name -->
+          <summary class="btn ghost account-summary">
+            <span class="avatar" aria-hidden="true">
+              {{ (current_user.name or current_user.email or 'U')[:1]|upper }}
+            </span>
+            <span class="account-text">
+              <span class="account-main">{{ current_user.name or current_user.email }}</span>
+              <span class="account-sub">Account</span>
+            </span>
+          </summary>
+
+          <!-- Dropdown menu content -->
+          <div class="account-dropdown">
+            <!-- User metadata -->
+            <div class="account-meta">
+              <div class="muted small">Signed in as</div>
+              <div class="account-email">{{ current_user.email }}</div>
+              <div class="badge" style="margin-top:10px;">Role: {{ current_role }}</div>
+            </div>
+
+            <!-- Account management links -->
+            <a class="dropdown-item" href="{{ url_for('main.account') }}">Account settings</a>
+            <a class="dropdown-item danger" href="{{ url_for('main.logout') }}">Logout</a>
+          </div>
+        </details>
+      {% else %}
+        <!-- Login / register buttons for guests -->
+        <a class="btn outline" href="{{ url_for('main.login') }}">Login</a>
+        <a class="btn primary" href="{{ url_for('main.register') }}">Register</a>
+      {% endif %}
+
+  </div>
+</header>
+<!-- VERSION 3 END -->
+
+<!-- Main Content Section-->
+<main class="wrap">
+  <!-- Flask flash message handler -->
+  <!-- Reference: Flask flashing messages (Pallets Projects, 2024)
+  https://flask.palletsprojects.com/en/stable/patterns/flashing/ -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat,msg in messages %}
+        <div class="flash {{ cat if cat else '' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  <!-- Content block replaced dynamically by child templates -->
+  <!-- Reference: Jinja template inheritance blocks (Pallets Projects, 2024)
+  https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer style="border-top:1px solid var(--line); background:#fff; margin-top:56px;">
+  <div class="wrap row" style="justify-content:space-between; align-items:center; padding:20px 0; color:var(--muted); font-size:0.875rem; flex-wrap:wrap; gap:8px">
+    <span style="font-weight:600; color:var(--text-0);">CharityConnect</span>
+    <span>&copy; 2025 — Developed by Robbie Wiseman. All rights reserved.</span>
+  </div>
+</footer>
+
+</body>
+</html>
+
+<!-- Version 1 -->

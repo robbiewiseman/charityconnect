@@ -1,0 +1,51 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Failed payments heading -->
+<h1>Failed / Pending Payments</h1>
+<p class="muted">Orders that were not completed through Stripe. These may indicate abandoned checkouts, card declines, or webhook issues.</p>
+
+{% if orders %}
+<!-- Results table -->
+<div style="overflow-x:auto; margin-top:14px;">
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="border-bottom:2px solid var(--line); text-align:left;">
+        <th style="padding:8px;">Order ID</th>
+        <th style="padding:8px;">Event</th>
+        <th style="padding:8px;">Email</th>
+        <th style="padding:8px;">Status</th>
+        <th style="padding:8px;">Amount</th>
+        <th style="padding:8px;">Created</th>
+        <th style="padding:8px;">Stripe PI</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for order in orders %}
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:8px;">{{ order.id }}</td>
+        <td style="padding:8px;">{{ order.event.title if order.event else 'N/A' }}</td>
+        <td style="padding:8px;">{{ order.email }}</td>
+        <td style="padding:8px;">
+          <span style="color:red; font-weight:bold;">{{ order.status }}</span>
+        </td>
+        <td style="padding:8px;">&euro;{{ "%.2f"|format(order.total_cents / 100) }}</td>
+        <td style="padding:8px;">{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else 'N/A' }}</td>
+        <td style="padding:8px; font-size:0.8em;">{{ order.stripe_payment_intent or 'None' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p style="margin-top:14px;">No failed or pending payments found.</p>
+{% endif %}
+
+<!-- Navigation back to admin dashboard -->
+<div style="margin-top:18px;">
+  <a class="btn" href="{{ url_for('main.admin_home') }}">Back to Admin</a>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->

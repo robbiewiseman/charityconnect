@@ -1,0 +1,116 @@
+<!-- VERSION 3 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<!-- Registration card container -->
+<!-- VERSION 5 START -->
+<div class="card form-page-card wide">
+  <h2 style="margin-top:0; margin-bottom:4px">Create an account</h2>
+  <p class="muted" style="margin:0 0 20px">
+    If you register as an organiser, your account will be pending until an admin verifies you.
+  </p>
+  <!-- VERSION 5 END -->
+
+  <!-- Registration form -->
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }} <!-- CSRF token + hidden fields -->
+
+    <!-- Name field -->
+    <label for="{{ form.name.id }}">Full Name</label>
+    {{ form.name(class="", placeholder="Your name") }}
+    {% for e in form.name.errors %}
+      <div class="flash danger">{{ e }}</div> <!-- Name validation errors -->
+    {% endfor %}
+
+    <!-- Email field -->
+    <label for="{{ form.email.id }}">Email</label>
+    {{ form.email(class="", placeholder="you@example.com") }}
+    {% for e in form.email.errors %}
+      <div class="flash danger">{{ e }}</div> <!-- Email validation errors -->
+    {% endfor %}
+
+    <!-- Password + confirm side-by-side -->
+    <!-- VERSION 5 START -->
+    <div class="row" style="gap:12px; margin-top:4px; flex-wrap:wrap">
+      <div style="flex:1; min-width:200px">
+    <!-- VERSION 5 END -->
+        <label for="{{ form.password.id }}">Password</label>
+        {{ form.password(class="", placeholder="Minimum 6 characters") }}
+        {% for e in form.password.errors %}
+          <div class="flash danger">{{ e }}</div> <!-- Password validation errors -->
+        {% endfor %}
+      </div>
+
+      <!-- VERSION 5 START -->
+      <div style="flex:1; min-width:200px">
+        <label for="{{ form.confirm.id }}">Confirm password</label>
+      <!-- VERSION 5 END -->
+        {{ form.confirm(class="", placeholder="Repeat password") }}
+        {% for e in form.confirm.errors %}
+          <div class="flash danger">{{ e }}</div> <!-- Confirm validation errors -->
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- VERSION 5 START -->
+    <hr style="margin:20px 0; border:none; border-top:1px solid var(--line)"> <!-- Visual separator -->
+
+    <!-- Organiser toggle -->
+    <label class="row" style="gap:10px; align-items:center; margin:0; cursor:pointer">
+      {{ form.as_organiser() }} <!-- Checkbox -->
+      <span style="font-weight:200px">Register as an organiser?</span> <!-- Label text -->
+    </label>
+
+    <!-- Optional organiser details -->
+    <div class="row" style="gap:12px; margin-top:12px; flex-wrap:wrap">
+      <div style="flex:1; min-width:200px">
+        <label for="{{ form.org_name.id }}">Organisation name <span class="muted" style="font-weight:400">(optional)</span></label>
+        {{ form.org_name(class="", placeholder="e.g. Cork Fundraising Group") }} <!-- Org name input -->
+      </div>
+      <div style="flex:1; min-width:200px">
+        <label for="{{ form.charity_number.id }}">Charity number<span class="muted" style="font-weight:400">(optional)</span></label>
+        {{ form.charity_number(class="", placeholder="e.g. CHY12345") }} <!-- Charity number input -->
+      <!-- VERSION 5 END -->
+      </div>
+    </div>
+
+    <!-- CSRF error display (rare, but helpful for debugging) -->
+    {% if form.csrf_token.errors %}
+      {% for e in form.csrf_token.errors %}
+        <div class="flash danger">{{ e }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- VERSION 5 START -->
+    <hr style="margin:20px 0; border:none; border-top:1px solid var(--line)"> <!-- Visual separator -->
+
+    <!-- Consent checkbox for terms/privacy -->
+    <label class="row" style="gap:10px; align-items:center; margin:0; cursor:pointer">
+        {{ form.consent() }} <!-- Consent checkbox -->
+        <span style="font-size:.95rem">
+        <!-- VERSION 5 END -->
+            I agree to the <a href="#">Terms</a> and <a href="#">Privacy Policy</a> <!-- Links (replace # later) -->
+        </span>
+    </label>
+    {% for e in form.consent.errors %}
+        <div class="flash danger">{{ e }}</div> <!-- Consent validation errors -->
+    {% endfor %}
+
+    <!-- Form actions -->
+    <div class="row" style="justify-content:flex-end; gap:10px; margin-top:20px">
+      <a class="btn" href="{{ url_for('main.index') }}">Cancel</a> <!-- Cancel returns home -->
+      {{ form.submit(class="btn primary") }} <!-- Submit registration -->
+    </div>
+  </form>
+
+  <!-- Link to login -->
+  <!-- VERSION 5 START -->
+  <div style="margin-top:16px; padding-top:16px; border-top:1px solid var(--line); font-size:.9rem; color:var(--muted)">
+    Already have an account? <a href="{{ url_for('main.login') }}">Log in</a>
+  <!-- VERSION 5 END -->
+  </div>
+</div>
+
+{% endblock %}
+
+<!-- VERSION 3 END -->
