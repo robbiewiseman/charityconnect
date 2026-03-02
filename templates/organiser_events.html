@@ -38,7 +38,7 @@
   </button>
 </div>
 
-<!-- ===== ACTIVE EVENTS TAB ===== -->
+<!-- ACTIVE EVENTS TAB -->
 <div id="tab-active" class="tab-panel">
   {% if active_events %}
     <div class="events-grid">
@@ -63,6 +63,7 @@
               {{ ev.starts_at.strftime('%Y-%m-%d %H:%M') }} &bull; {{ ev.venue or 'TBA' }}
             </div>
 
+            <!-- VERSION 6 START -->
             <div class="row" style="gap:8px; margin-top:10px; align-items:center">
               {% if ev.published %}
                 <span class="badge verified">Published</span>
@@ -72,6 +73,20 @@
               <span class="badge" style="background:#DCFCE7; color:#166534; font-weight:700;">Active</span>
             </div>
 
+            <!-- Publish Now button shown only for draft events -->
+            {% if not ev.published %}
+              <div style="margin-top:10px; display:flex; gap:8px;">
+                <form method="post" action="{{ url_for('main.organiser_event_publish', event_id=ev.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn primary" type="submit" onclick="return confirm('Publish this event? It will be visible to the public.')">Publish Now</button>
+                </form>
+                <form method="post" action="{{ url_for('main.organiser_event_delete', event_id=ev.id) }}" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn danger-outline" type="submit" onclick="return confirm('Permanently delete this draft? This cannot be undone.')">Delete</button>
+                </form>
+              </div>
+            {% endif %}
+
             <div style="margin-top:12px">
               <form method="post" action="{{ url_for('main.organiser_event_complete', event_id=ev.id) }}" style="display:inline;">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -79,6 +94,7 @@
                 <button class="btn" type="submit">Mark as completed</button>
               </form>
             </div>
+            <!-- VERSION 6 END -->
 
             <div class="event-actions" style="margin-top:12px">
               <a class="btn" href="{{ url_for('main.event_detail', event_id=ev.id) }}">View</a>
@@ -96,7 +112,7 @@
   {% endif %}
 </div>
 
-<!-- ===== PAST EVENTS TAB ===== -->
+<!-- PAST EVENTS TAB -->
 <div id="tab-past" class="tab-panel" style="display:none">
   {% if past_events %}
     <div class="events-grid">
@@ -169,7 +185,7 @@
   {% endif %}
 </div>
 
-<!-- ===== REFUND REQUESTS TAB ===== -->
+<!-- REFUND REQUESTS TAB -->
 <div id="tab-refunds" class="tab-panel" style="display:none">
   <p class="muted" style="margin:0 0 16px;">Review and respond to refund requests from your attendees.</p>
 

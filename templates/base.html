@@ -73,11 +73,6 @@
     <!-- Right side actions -->
     <div class="nav-actions">
 
-      <!-- Apply for organiser/charity verification -->
-      <a class="btn outline" href="{{ url_for('main.apply_verification') }}">
-        Apply for Verification
-      </a>
-
       {% if current_user.is_authenticated %}
         <!-- Account dropdown for logged-in users -->
         <details class="account-menu">

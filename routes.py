@@ -26,7 +26,9 @@ from config import Config
 from sqlalchemy import case, func
 from forms import PurchaseForm, ApplyVerificationForm, EventForm, RegisterForm, LoginForm, AccountForm
 from flask_login import login_user, logout_user, login_required, current_user
-from datetime import datetime
+# VERSION 6 START
+from datetime import datetime, timedelta
+# VERSION 6 END
 from openrouter_client import chat, OpenRouterError
 # VERSION 3 END
 # VERSION 4 START
@@ -273,7 +275,15 @@ def finalise_order(order):
                 mail=mail,
                 to_email=order.email,
                 subject=f"Your CharityConnect receipt (order #{order.id})",
-                body=f"Thanks for your order #{order.id}. Your receipt is attached.",
+                # VERSION 6 START
+                body=(
+                    f"Thanks for your order #{order.id}. Your receipt is attached.\n\n"
+                    f"Refund policy: You may request a refund within 24 hours of placing your order. "
+                    f"After this window has passed, refund requests will no longer be available.\n\n"
+                    f"To request a refund, visit My Orders on CharityConnect.\n\n"
+                    f"CharityConnect"
+                ),
+                # VERSION 6 END
                 pdf_bytes=order.receipt_pdf,
                 filename=f"receipt_{order.id}.pdf",
             )
@@ -2027,6 +2037,66 @@ def organiser_event_complete(event_id):
     return redirect(url_for("main.organiser_events"))
 # VERSION 4 END
 
+# VERSION 6 START
+@bp.route("/organiser/events/<int:event_id>/publish", methods=["POST"])
+@login_required
+def organiser_event_publish(event_id):
+    # Restrict to organisers only
+    guard = require_role(ROLE_ORG, ROLE_ADMIN)
+    if guard:
+        return guard
+
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+
+    # Publish the event
+    ev.published = True
+    db.session.commit()
+
+    try:
+        log_action(
+            action="EVENT_PUBLISHED",
+            entity_type="Event",
+            entity_id=ev.id,
+            meta={"title": ev.title},
+        )
+    except Exception:
+        pass
+
+    flash(f'"{ev.title}" is now published and visible to the public.', "success")
+    return redirect(url_for("main.organiser_events"))
+
+@bp.route("/organiser/events/<int:event_id>/delete", methods=["POST"])
+@login_required
+def organiser_event_delete(event_id):
+    # Restrict to organisers only
+    guard = require_role(ROLE_ORG, ROLE_ADMIN)
+    if guard:
+        return guard
+
+    ev, org = _get_event_for_current_organiser_or_404(event_id)
+
+    # Only allow deletion of unpublished events
+    if ev.published:
+        flash("Published events cannot be deleted.", "danger")
+        return redirect(url_for("main.organiser_events"))
+
+    try:
+        log_action(
+            action="EVENT_DELETED",
+            entity_type="Event",
+            entity_id=ev.id,
+            meta={"title": ev.title},
+        )
+    except Exception:
+        pass
+
+    db.session.delete(ev)
+    db.session.commit()
+
+    flash(f'"{ev.title}" has been deleted.', "success")
+    return redirect(url_for("main.organiser_events"))
+# VERSION 6 END
+
 # VERSION 5 START
 @bp.route("/event/<int:event_id>/cover")
 def event_cover(event_id):
@@ -2088,9 +2158,9 @@ def my_orders():
     for order in orders:
         refund_req = RefundRequest.query.filter_by(order_id=order.id).order_by(RefundRequest.requested_at.desc()).first()
         orders_data.append({"order": order, "refund_request": refund_req})
-
-    return render_template("my_orders.html", orders_data=orders_data)
-
+    # VERSION 6 START
+    return render_template("my_orders.html", orders_data=orders_data, now=datetime.utcnow(), timedelta=timedelta)
+    # VERSION 6 END
 
 # USER: Submit a refund request
 @bp.route("/orders/<int:order_id>/request-refund", methods=["POST"])
@@ -2107,6 +2177,14 @@ def request_refund(order_id):
     if existing:
         flash("You already have a pending refund request for this order.", "warning")
         return redirect(url_for("main.my_orders"))
+
+    # VERSION 6 START
+    # Enforce 24-hour refund window
+    refund_deadline = order.created_at + timedelta(hours=24)
+    if datetime.utcnow() > refund_deadline:
+        flash("The 24-hour refund window for this order has passed.", "warning")
+        return redirect(url_for("main.my_orders"))
+    # VERSION 6 END
 
     reason = request.form.get("reason", "").strip()
 

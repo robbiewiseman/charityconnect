@@ -96,33 +96,44 @@
           </a>
 
           {% if not refund_req and not order.event.is_completed %}
+          {% set refund_deadline = order.created_at + timedelta(hours=24) %}
+          {% if now < refund_deadline %}
             <button class="btn danger-outline"
                     onclick="document.getElementById('refund-form-{{ order.id }}').style.display='block'; this.style.display='none';">
               Request Refund
             </button>
+          {% else %}
+            <span class="muted" style="font-size:13px;">Refund window expired</span>
           {% endif %}
+        {% endif %}
 
         </div>
 
         <!-- Refund form (hidden until button clicked) -->
         {% if not refund_req and not order.event.is_completed %}
-          <div id="refund-form-{{ order.id }}" style="display:none; margin-top:12px;">
-            <form method="post" action="{{ url_for('main.request_refund', order_id=order.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <textarea name="reason" rows="2"
-                        placeholder="Optional: explain why you'd like a refund..."
-                        style="width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px;"></textarea>
-              <div class="row" style="gap:8px;">
-                <button type="submit" class="btn danger">
-                  Submit Request
-                </button>
-                <button type="button" class="btn outline"
-                        onclick="document.getElementById('refund-form-{{ order.id }}').style.display='none'; document.querySelector('[onclick*=\'refund-form-{{ order.id }}\']').style.display='inline-block';">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
+          {% set refund_deadline = order.created_at + timedelta(hours=24) %}
+          {% if now < refund_deadline %}
+            <div id="refund-form-{{ order.id }}" style="display:none; margin-top:12px;">
+              <p class="muted" style="margin:0 0 8px; font-size:13px;">
+                Refunds can only be requested within 24 hours of purchase. Your window closes {{ refund_deadline.strftime('%d %b %Y at %H:%M') }} UTC.
+              </p>
+              <form method="post" action="{{ url_for('main.request_refund', order_id=order.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <textarea name="reason" rows="2"
+                          placeholder="Optional: explain why you'd like a refund..."
+                          style="width:100%; box-sizing:border-box; margin-bottom:8px; padding:8px;"></textarea>
+                <div class="row" style="gap:8px;">
+                  <button type="submit" class="btn danger">
+                    Submit Request
+                  </button>
+                  <button type="button" class="btn outline"
+                          onclick="document.getElementById('refund-form-{{ order.id }}').style.display='none'; document.querySelector('[onclick*=\'refund-form-{{ order.id }}\']').style.display='inline-block';">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          {% endif %}
         {% endif %}
 
       </div>
