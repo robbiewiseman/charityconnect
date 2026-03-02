@@ -6,8 +6,47 @@
 from flask import current_app
 from flask_mail import Message
 
+# VERSION 6 START
+import base64
+import os
+
+# Reference: Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
+# https://developers.brevo.com/docs/send-a-transactional-email
+def _send_via_brevo(to_email, subject, body, pdf_bytes=None, filename=None):
+    """Send email via Brevo HTTP API — bypasses SMTP port blocks on Render free tier."""
+    import sib_api_v3_sdk
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
+        raise RuntimeError("BREVO_API_KEY not set")
+    # Configure the Brevo API client with our API key
+    configuration = sib_api_v3_sdk.Configuration()
+    configuration.api_key["api-key"] = api_key
+    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
+        sib_api_v3_sdk.ApiClient(configuration)
+    )
+    # Build the email payload
+    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+        sender={"name": "CharityConnect", "email": os.getenv("BREVO_SENDER_EMAIL", "noreply@charityconnect.ie")},
+        to=[{"email": to_email}],
+        subject=subject,
+        text_content=body,
+    )
+    # Attach PDF if provided
+    if pdf_bytes and filename:
+        encoded = base64.b64encode(pdf_bytes).decode("utf-8")
+        send_smtp_email.attachment = [{"content": encoded, "name": filename}]
+    # Send the email via Brevo API
+    api_instance.send_transac_email(send_smtp_email)
+# VERSION 6 END
+
 def send_receipt_email(mail, to_email: str, subject: str, body: str, pdf_bytes: bytes, filename: str):
     # Sends an email with a PDF receipt attached.
+    # VERSION 6 START
+    # Try Brevo HTTP API first (works on Render free tier where SMTP is blocked)
+    if os.getenv("BREVO_API_KEY"):
+        _send_via_brevo(to_email, subject, body, pdf_bytes, filename)
+        return
+    # VERSION 6 END
 
     # Create the email message
     msg = Message(
@@ -58,6 +97,13 @@ def send_refund_decision_email(mail, to_email: str, event_title: str, approved: 
         "CharityConnect"
     )
 
+    # VERSION 6 START
+    # Try Brevo HTTP API first (works on Render free tier where SMTP is blocked)
+    if os.getenv("BREVO_API_KEY"):
+        _send_via_brevo(to_email, subject, body)
+        return
+    # VERSION 6 END
+
     # Create email message
     msg = Message(
         subject=subject,
@@ -104,6 +150,13 @@ def send_impact_summary_email(mail, to_email: str, event_title: str, event_date:
         "If you have any questions, please contact the event organiser.\n\n"
         "CharityConnect Team"
     )
+
+    # VERSION 6 START
+    # Try Brevo HTTP API first (works on Render free tier where SMTP is blocked)
+    if os.getenv("BREVO_API_KEY"):
+        _send_via_brevo(to_email, subject, body)
+        return
+    # VERSION 6 END
 
     # Create email message
     msg = Message(

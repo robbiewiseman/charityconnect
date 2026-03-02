@@ -17,6 +17,7 @@ openai
 werkzeug
 # VERSION 6 START
 gunicorn
+sib-api-v3-sdk
 # VERSION 6 END
 
 # VERSION 3
