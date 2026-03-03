@@ -28,6 +28,11 @@ from forms import PurchaseForm, ApplyVerificationForm, EventForm, RegisterForm, 
 from flask_login import login_user, logout_user, login_required, current_user
 # VERSION 6 START
 from datetime import datetime, timedelta
+# Reference: SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
+# https://docs.sqlalchemy.org/en/20/core/inspection.html
+import json as _json
+import base64 as _base64
+from sqlalchemy import inspect as sa_inspect
 # VERSION 6 END
 from openrouter_client import chat, OpenRouterError
 # VERSION 3 END
@@ -2302,6 +2307,7 @@ def health_check():
     all_ok = status["database"]
     code = 200 if all_ok else 503
     return {"status": "healthy" if all_ok else "degraded", "services": status}, code
+
 # Admin system health dashboard — displays live service connectivity for the platform
 @bp.route("/admin/system-health")
 @login_required
@@ -2340,11 +2346,6 @@ def admin_system_health():
     })
     return render_template("admin_system_health.html", checks=checks)
 
-# Reference: SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
-# https://docs.sqlalchemy.org/en/20/core/inspection.html
-import json as _json
-import base64 as _base64
-from sqlalchemy import inspect as sa_inspect
 # Admin database backup — exports all table data as a downloadable JSON file
 # This approach uses pure SQLAlchemy so it works with Neon (hosted PostgreSQL)
 # without needing pg_dump installed locally

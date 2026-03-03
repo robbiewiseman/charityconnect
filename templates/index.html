@@ -20,21 +20,25 @@
 </section>
 
 <!-- VERSION 5 START -->
+<!-- VERSION 6 START -->
+<div class="row" style="gap:16px; margin-bottom:28px; flex-wrap:wrap">
 <div class="stat-card">
   <div class="stat-label">Charities supported</div>
   <div class="stat-value">{{ charities_count }}</div>
   <div class="stat-desc">Verified charity partners on the platform</div>
 </div>
-<div class="stat-card">
-  <div class="stat-label">Tickets processed</div>
-  <div class="stat-value">{{ tickets_count }}</div>
-  <div class="stat-desc">Tickets issued across all events</div>
+  <div class="stat-card">
+    <div class="stat-label">Tickets processed</div>
+    <div class="stat-value">{{ tickets_count }}</div>
+    <div class="stat-desc">Tickets issued across all events</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Funds raised</div>
+    <div class="stat-value">&euro;{{ '%.2f' % funds_raised_eur }}</div>
+    <div class="stat-desc">Combined ticket revenue &amp; donations</div>
+  </div>
 </div>
-<div class="stat-card">
-  <div class="stat-label">Funds raised</div>
-  <div class="stat-value">&euro;{{ '%.2f' % funds_raised_eur }}</div>
-  <div class="stat-desc">Combined ticket revenue &amp; donations</div>
-</div>
+<!-- VERSION 6 END -->
 <!-- VERSION 5 END -->
 
 <!-- HOW IT WORKS + WHY -->
