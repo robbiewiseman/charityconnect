@@ -164,7 +164,7 @@ Usage:
 order_details.html: Utilised layout classes (row, col-lg-8, shadow-sm, border-0) to create a clean confirmation page layout.
 Notes: Bootstrap utility classes were selectively used for responsive grid alignment and spacing. The project does not depend on Bootstrap JavaScript—only structural and styling utilities were referenced.
 
-14. ChatGPT usage:
+14. ChatGPT/Claude usage:
 
 CSS: https://chatgpt.com/share/690e2571-05ec-8004-8017-1c480e7546dd
 Routes.py: https://chatgpt.com/share/690df926-fc70-8004-8452-e99ab50a799c
@@ -178,6 +178,10 @@ JavaScript Logic in event_new.html and organiser_event_analytics.html: https://c
 # VERSION 5 START
 # Helper: sends impact summary emails to all unique paid attendees for an event: https://chatgpt.com/share/699701ad-b814-8004-a7e4-87f0f5dcd97e
 # VERSION 5 END
+# VERSION 6 START
+Brevo transactional email: https://claude.ai/share/259f7745-1066-4528-a8ab-213828dfac51
+Updated CSS: https://claude.ai/share/70841908-94de-4726-b9f2-3fa6af666dbd
+# VERSION 6 END
 
 ====================================================================================
 # VERSION 1
@@ -391,14 +395,43 @@ Notes: The SQLAlchemy session API documentation was referenced to understand how
 # VERSION 6 START
 =============================================================================================
 
-# Reference: SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
-# https://docs.sqlalchemy.org/en/20/core/inspection.html
+33. SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
+URL: https://docs.sqlalchemy.org/en/20/core/inspection.html
+Usage:
+routes.py (admin_backup, admin_restore):
+- Using inspect(db.engine).get_table_names() to dynamically retrieve all database tables for JSON backup export.
+- Iterating table metadata for column-level data serialisation and restoration.
+Notes: The SQLAlchemy inspection API was referenced to implement a generic, schema-aware database backup and restore system without hardcoding table names.
 
-# Reference: GDPR Article 17 – Right to Erasure (European Commission, 2016)
-# https://gdpr-info.eu/art-17-gdpr/
+34. Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
+URL: https://developers.brevo.com/docs/send-a-transactional-email
+Usage:
+email_utils.py:
+- _send_via_brevo() helper function that sends transactional emails via Brevo's HTTP API using the sib-api-v3-sdk Python package.
+- Bypasses SMTP port blocks on Render's free tier by using HTTP-based email delivery instead of SMTP.
+- Supports optional PDF attachment encoding via base64 for receipt emails.
+- All three email functions (send_receipt_email, send_refund_decision_email, send_impact_summary_email) check for BREVO_API_KEY and use Brevo if available, falling back to Flask-Mail for local development.
+Notes: The Brevo API documentation informed the configuration of the SDK client, sender formatting, attachment encoding, and transactional email dispatch. The implementation was developed with AI assistance using the sib-api-v3-sdk Python SDK.
 
-# Reference: Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
-# https://developers.brevo.com/docs/send-a-transactional-email
+35. Render Build and Start Commands (Render, 2025)
+URL: https://docs.render.com/deploy-flask
+Usage:
+build.sh: Build script for Render deployment including pip install and database table creation.
+Render dashboard: Configuration of gunicorn start command and environment variables.
+Notes: Render's Flask deployment documentation guided the production hosting configuration, including the build script structure and gunicorn binding.
 
-# Reference: Render Build and Start Commands (Render, 2025)
-# https://docs.render.com/deploy-flask
+36. GDPR Article 17 – Right to Erasure (European Commission, 2016)
+URL: https://gdpr-info.eu/art-17-gdpr/
+Usage:
+routes.py (delete_account):
+- Anonymising user personal data (name, email, password hash) rather than hard-deleting records, preserving order history for audit purposes.
+- Withdrawing marketing consent and updating timestamps on deletion.
+- Unlinking organiser profiles and setting their status to "deleted".
+- Logging the deletion action to the audit trail before anonymisation.
+account.html:
+- Delete account section with two-step confirmation dialog explaining what data is removed and retained.
+Notes: GDPR Article 17 informed the account deletion design, ensuring users can exercise their right to erasure while the platform retains anonymised audit and transaction records for compliance.
+
+=============================================================================================
+# VERSION 6 END
+=============================================================================================
