@@ -91,10 +91,6 @@
             </a>
           {% endif %}
 
-          <a class="btn outline" href="{{ url_for('main.order_verify', order_id=order.id) }}">
-            Verify QR
-          </a>
-
           {% if not refund_req and not order.event.is_completed %}
           {% set refund_deadline = order.created_at + timedelta(hours=24) %}
           {% if now < refund_deadline %}

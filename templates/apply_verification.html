@@ -11,7 +11,9 @@
 
     <!-- Type selector -->
     <label for="{{ form.org_type.id }}">I am applying as</label>
-    {{ form.org_type(class="") }}
+    <!-- VERSION 6 START -->
+    {{ form.org_type(class="", id="org-type-select") }}
+    <!-- VERSION 6 START -->
     {% for e in form.org_type.errors %}
       <div class="flash danger">{{ e }}</div>
     {% endfor %}
@@ -23,12 +25,16 @@
       <div class="flash danger">{{ e }}</div>
     {% endfor %}
 
-    <!-- Charity Number -->
-    <label for="{{ form.charity_number.id }}">Charity Number (optional)</label>
-    {{ form.charity_number(class="", placeholder="e.g. 12345") }}
-    {% for e in form.charity_number.errors %}
-      <div class="flash danger">{{ e }}</div>
-    {% endfor %}
+    <!-- VERSION 6 START-->
+    <!-- Charity Number (only shown for charity applicants) -->
+    <div id="charity-number-group">
+      <label for="{{ form.charity_number.id }}">Charity Number (optional)</label>
+      {{ form.charity_number(class="", placeholder="e.g. 12345") }}
+      {% for e in form.charity_number.errors %}
+        <div class="flash danger">{{ e }}</div>
+      {% endfor %}
+    </div>
+    <!-- VERSION 6 END-->
 
     <!-- Contact Email -->
     <label for="{{ form.contact_email.id }}">Contact Email</label>
@@ -43,6 +49,21 @@
 
   </form>
 </div>
+
+<!-- VERSION 6 START-->
+<script>
+  // Show charity number field only when "charity" is selected
+  const typeSelect = document.getElementById('org-type-select');
+  const charityGroup = document.getElementById('charity-number-group');
+
+  function toggleCharityNumber() {
+    charityGroup.style.display = typeSelect.value === 'charity' ? 'block' : 'none';
+  }
+
+  typeSelect.addEventListener('change', toggleCharityNumber);
+  toggleCharityNumber(); // Run on page load
+</script>
+<!-- VERSION 6 END-->
 
 {% endblock %}
 

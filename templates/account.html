@@ -81,6 +81,35 @@
     </p>
     <a class="btn outline" href="{{ url_for('main.apply_verification') }}">Apply for Verification</a>
   {% endif %}
+
+  <!-- Delete account section -->
+  <hr style="margin:20px 0; border:none; border-top:1px solid var(--line)">
+  <h3 style="margin:0 0 8px; color:var(--brand-danger)">Delete account</h3>
+  <p class="muted" style="margin:0 0 12px; font-size:.9rem">
+    Permanently delete your account and anonymise your personal data. Your order history will be
+    retained in anonymised form for record-keeping purposes. This action cannot be undone.
+  </p>
+  <!-- Confirmation dialog (hidden by default, toggled via JS) -->
+  <div id="delete-confirm" style="display:none; background:rgba(239,68,68,.06); border:1px solid rgba(239,68,68,.25); border-radius:var(--rounded); padding:16px; margin-bottom:12px;">
+    <p style="margin:0 0 10px; font-weight:600; color:var(--brand-danger);">Are you sure?</p>
+    <p style="margin:0 0 14px; font-size:.9rem; color:var(--text-1)">
+      This will permanently remove your name, email, and password. Any orders you have placed
+      will be kept but your personal details will be replaced with "Deleted User". You will be
+      logged out immediately.
+    </p>
+    <form method="post" action="{{ url_for('main.delete_account') }}">
+      <!-- CSRF protection for the delete form -->
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="row" style="gap:10px;">
+        <button type="button" class="btn" onclick="document.getElementById('delete-confirm').style.display='none'">Cancel</button>
+        <button type="submit" class="btn" style="background:var(--brand-danger); color:#fff; border-color:var(--brand-danger);">Yes, delete my account</button>
+      </div>
+    </form>
+  </div>
+  <button type="button" id="delete-trigger" class="btn outline" style="color:var(--brand-danger); border-color:rgba(239,68,68,.4);"
+    onclick="document.getElementById('delete-confirm').style.display='block'; this.style.display='none';">
+    Delete my account
+  </button>
   <!-- VERSION 6 END -->
 </div>
 

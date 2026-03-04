@@ -80,7 +80,7 @@ def send_refund_decision_email(mail, to_email: str, event_title: str, approved: 
     if approved:
         body = (
             f"Good news! Your refund request for '{event_title}' has been approved.\n\n"
-            "The organiser will process your refund shortly.\n"
+            "Your refund will be processed shortly.\n"
         )
     else:
         body = (

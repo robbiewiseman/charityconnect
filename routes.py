@@ -366,7 +366,6 @@ def register():
             org = Organiser(
                 user_id=user.id,
                 organisation_name=(form.org_name.data or "").strip(),
-                charity_number=(form.charity_number.data or "").strip() or None,
                 org_type="organiser",
                 status="pending",
                 verified=False,
@@ -506,6 +505,18 @@ def index():
     funds_raised_eur = funds_raised / 100
     return render_template("index.html", events=events, charities_count=charities_count, tickets_count=tickets_count, funds_raised_eur=funds_raised_eur)
     # VERSION 5 END
+
+# VERSION 6 START
+# Terms of Service page
+@bp.route("/terms")
+def terms():
+    return render_template("terms.html")
+
+# Privacy Policy page
+@bp.route("/privacy")
+def privacy_policy():
+    return render_template("privacy.html")
+# VERSION 6 END
 
 # VERSION 2 START
 # Show a list of all published events
@@ -898,6 +909,46 @@ def account():
     # Render the account page
     return render_template("account.html", form=form)
 # VERSION 3 END
+
+# VERSION 6 START
+# Account deletion — anonymises personal data and logs the user out
+# Reference: GDPR Article 17 – Right to Erasure (European Commission, 2016)
+# https://gdpr-info.eu/art-17-gdpr/
+@bp.route("/account/delete", methods=["POST"])
+@login_required
+def delete_account():
+    user = current_user
+    user_id = user.id
+
+    # Audit log before anonymisation so we capture the action
+    log_action(
+        action="ACCOUNT_DELETED",
+        entity_type="User",
+        entity_id=user_id,
+        meta={"email_hash": str(hash(user.email))},
+    )
+
+    # Anonymise personal data rather than hard-deleting
+    # This preserves order/transaction history for audit purposes
+    user.name = "Deleted User"
+    user.email = f"deleted_{user_id}@removed.charityconnect"
+    user.password_hash = "DELETED"
+    user.marketing_consent = False
+    user.marketing_consent_withdrawn_at = datetime.utcnow()
+
+    # Unlink organiser profile if one exists
+    if user.organiser:
+        user.organiser.contact_email = user.email
+        user.organiser.status = "deleted"
+        user.organiser.verified = False
+
+    db.session.commit()
+
+    # Log the user out and redirect to homepage
+    logout_user()
+    flash("Your account has been deleted and your personal data has been removed.", "info")
+    return redirect(url_for("main.index"))
+# VERSION 6 END
 
 # Admin Routes
 @bp.route("/admin/verify")

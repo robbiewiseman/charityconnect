@@ -1,0 +1,113 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card form-page-card wide" style="max-width:760px">
+  <h2 style="margin-top:0; margin-bottom:4px">Terms of Service</h2>
+  <p class="muted" style="margin:0 0 20px">Last updated: March 2026</p>
+
+  <h3>1. About CharityConnect</h3>
+  <p>
+    CharityConnect is a charity event ticketing and management platform developed by Robbie Wiseman
+    as a Final Year Project. The platform connects verified charities, event organisers, and attendees,
+    enabling transparent fundraising through ticketed events.
+  </p>
+
+  <h3>2. Acceptance of Terms</h3>
+  <p>
+    By creating an account or using CharityConnect, you agree to these Terms of Service and our
+    <a href="{{ url_for('main.privacy_policy') }}">Privacy Policy</a>. If you do not agree, please
+    do not use the platform.
+  </p>
+
+  <h3>3. Account Registration</h3>
+  <p>
+    You must provide accurate and complete information when registering. You are responsible for
+    maintaining the confidentiality of your password and for all activity under your account.
+    You must be at least 18 years old to create an account.
+  </p>
+
+  <h3>4. User Roles</h3>
+  <p>
+    CharityConnect supports three roles: <strong>User</strong> (attendees who browse and purchase tickets),
+    <strong>Organiser</strong> (verified individuals or groups who create and manage charity events), and
+    <strong>Admin</strong> (platform administrators). Organiser accounts require verification by an
+    administrator before events can be published.
+  </p>
+
+  <h3>5. Event Ticketing and Payments</h3>
+  <p>
+    All payments are processed securely through Stripe. CharityConnect does not store your card details.
+    When you purchase a ticket, you will receive a digital receipt with a QR code for verification.
+    Ticket prices and charity allocation percentages are displayed on each event page before purchase.
+  </p>
+
+  <h3>6. Refund Policy</h3>
+  <p>
+    Refund requests may be submitted within <strong>24 hours</strong> of placing an order via the
+    "My Orders" page. After this window has passed, refund requests will no longer be available.
+    All refund requests are reviewed by the event organiser, who may approve or deny them at their
+    discretion. Approved refunds will be processed through the original payment method.
+  </p>
+
+  <h3>7. Charity Fund Allocation</h3>
+  <p>
+    Organisers assign allocation percentages to verified beneficiary charities for each event.
+    These percentages are displayed publicly on the event page. CharityConnect provides transparency
+    tools including allocation reports and payout summaries, but does not directly handle the transfer
+    of funds to charities.
+  </p>
+
+  <h3>8. AI-Generated Content</h3>
+  <p>
+    CharityConnect offers optional AI-assisted features to help organisers generate event descriptions
+    and marketing suggestions. AI-generated content is provided as a suggestion only. Organisers are
+    responsible for reviewing and approving all content before publication. CharityConnect does not
+    guarantee the accuracy of AI-generated text.
+  </p>
+
+  <h3>9. Acceptable Use</h3>
+  <p>
+    You agree not to: create fraudulent events or misrepresent charity affiliations; use the platform
+    for any unlawful purpose; attempt to gain unauthorised access to other accounts or platform systems;
+    submit false verification applications; or interfere with the operation of the platform.
+  </p>
+
+  <h3>10. Intellectual Property</h3>
+  <p>
+    All content, design, and code on CharityConnect is the property of Robbie Wiseman unless otherwise
+    stated. Event content (titles, descriptions, images) remains the property of the respective organisers.
+  </p>
+
+  <h3>11. Limitation of Liability</h3>
+  <p>
+    CharityConnect is provided "as is" as an academic project. While every effort is made to ensure
+    reliability, we do not guarantee uninterrupted service. CharityConnect is not liable for any
+    indirect, incidental, or consequential damages arising from the use of the platform.
+  </p>
+
+  <h3>12. Account Termination</h3>
+  <p>
+    We reserve the right to suspend or terminate accounts that violate these terms, submit fraudulent
+    verification applications, or engage in activity that harms the platform or its users.
+  </p>
+
+  <h3>13. Changes to These Terms</h3>
+  <p>
+    We may update these terms from time to time. Continued use of CharityConnect after changes are
+    posted constitutes acceptance of the updated terms.
+  </p>
+
+  <h3>14. Contact</h3>
+  <p>
+    If you have questions about these terms, please contact us at
+    <a href="mailto:robbie.wiseman13@gmail.com">robbie.wiseman13@gmail.com</a>.
+  </p>
+
+  <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); font-size:.9rem; color:var(--muted)">
+    <a href="{{ url_for('main.register') }}">&larr; Back to registration</a>
+  </div>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->

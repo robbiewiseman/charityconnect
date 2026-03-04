@@ -39,7 +39,6 @@ https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structure
           <tr style="text-align:left; color:var(--muted); font-size:.9rem">
             <th style="padding:8px 10px">Organisation</th>
             <th style="padding:8px 10px">Email</th>
-            <th style="padding:8px 10px">Charity No.</th>
             <th style="padding:8px 10px">Status</th>
             <th style="padding:8px 10px" class="text-right">Action</th>
           </tr>
@@ -55,8 +54,6 @@ https://jinja.palletsprojects.com/en/stable/templates/#list-of-control-structure
             <td style="padding:12px 10px"><strong>{{ org.organisation_name or 'Unnamed organisation' }}</strong></td>
             <!-- Linked user email (if organiser has associated user account) -->
             <td style="padding:12px 10px">{{ org.contact_email or (org.user.email if org.user else '—') }}</td>
-            <!-- Charity registration number (optional field) -->
-            <td style="padding:12px 10px">{{ org.charity_number or '—' }}</td>
             <!-- Verification status badge -->
             <!-- Reference: Jinja if/else (Pallets Projects, 2024)
             https://jinja.palletsprojects.com/en/stable/templates/#if -->

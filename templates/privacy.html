@@ -1,0 +1,145 @@
+<!-- VERSION 6 START -->
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card form-page-card wide" style="max-width:760px">
+  <h2 style="margin-top:0; margin-bottom:4px">Privacy Policy</h2>
+  <p class="muted" style="margin:0 0 20px">Last updated: March 2026</p>
+
+  <!-- Section 1: Introduction and GDPR reference -->
+  <h3>1. Introduction</h3>
+  <p>
+    CharityConnect ("we", "us", "our") is committed to protecting your personal data. This Privacy
+    Policy explains what information we collect, how we use it, and your rights under the General
+    Data Protection Regulation (GDPR) and the Irish Data Protection Act 2018.
+  </p>
+
+  <!-- Section 2: Data controller details -->
+  <h3>2. Data Controller</h3>
+  <p>
+    The data controller for CharityConnect is Robbie Wiseman. If you have questions about how your
+    data is handled, you can contact us at
+    <a href="mailto:robbie.wiseman13@gmail.com">robbie.wiseman13@gmail.com</a>.
+  </p>
+
+  <!-- Section 3: Types of personal data collected -->
+  <h3>3. What Data We Collect</h3>
+  <p>We collect the following personal data when you use CharityConnect:</p>
+  <ul style="margin:0 0 0 18px; padding:0; line-height:1.8">
+    <li><strong>Account information:</strong> Full name, email address, and hashed password when you register.</li>
+    <li><strong>Organiser details:</strong> Organisation name, charity number, and contact email if you register as an organiser.</li>
+    <li><strong>Order and payment data:</strong> Purchase details, ticket quantities, donation amounts, and Stripe payment references. Card details are processed directly by Stripe and are never stored on our servers.</li>
+    <li><strong>Consent records:</strong> Timestamps of when you agreed to these terms and any marketing consent preferences.</li>
+    <li><strong>Audit data:</strong> Records of key actions (purchases, verification decisions, refund requests) for platform integrity and traceability.</li>
+  </ul>
+
+  <!-- Section 4: How collected data is used -->
+  <h3>4. How We Use Your Data</h3>
+  <p>We use your personal data for the following purposes:</p>
+  <ul style="margin:0 0 0 18px; padding:0; line-height:1.8">
+    <li><strong>Account management:</strong> To create and maintain your account, authenticate logins, and manage roles.</li>
+    <li><strong>Ticket processing:</strong> To process purchases, generate receipts, and send order confirmations via email.</li>
+    <li><strong>Refund handling:</strong> To process and communicate refund request decisions.</li>
+    <li><strong>Verification:</strong> To review organiser and charity applications submitted through the platform.</li>
+    <li><strong>Platform analytics:</strong> To generate aggregated, non-identifying statistics such as total tickets sold and funds raised.</li>
+    <li><strong>Communication:</strong> To send transactional emails (receipts, refund decisions, impact summaries). Marketing emails are only sent if you have given explicit consent.</li>
+  </ul>
+
+  <!-- Section 5: GDPR legal bases for processing -->
+  <h3>5. Legal Basis for Processing</h3>
+  <p>We process your data on the following legal bases under GDPR:</p>
+  <ul style="margin:0 0 0 18px; padding:0; line-height:1.8">
+    <li><strong>Contract (Article 6(1)(b)):</strong> Processing necessary to fulfil ticket purchases and provide platform services.</li>
+    <li><strong>Consent (Article 6(1)(a)):</strong> For marketing communications and acceptance of these terms at registration.</li>
+    <li><strong>Legitimate interest (Article 6(1)(f)):</strong> For audit logging, fraud prevention, and platform security.</li>
+  </ul>
+
+  <!-- Section 6: Third-party services that process user data -->
+  <h3>6. Third-Party Services</h3>
+  <p>CharityConnect uses the following third-party services that may process your data:</p>
+  <ul style="margin:0 0 0 18px; padding:0; line-height:1.8">
+    <li><strong>Stripe:</strong> For secure payment processing. Stripe's privacy policy is available at <a href="https://stripe.com/privacy" target="_blank" rel="noopener">stripe.com/privacy</a>.</li>
+    <li><strong>Brevo (Sendinblue):</strong> For transactional email delivery in production. Brevo's privacy policy is available at <a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noopener">brevo.com/legal/privacypolicy</a>.</li>
+    <li><strong>Neon:</strong> For cloud-hosted PostgreSQL database services.</li>
+    <li><strong>Render:</strong> For application hosting.</li>
+    <li><strong>OpenRouter / Meta Llama:</strong> For optional AI-generated event descriptions and marketing suggestions. No personal user data is sent to the AI service.</li>
+  </ul>
+
+  <!-- Section 7: How long data is retained -->
+  <h3>7. Data Retention</h3>
+  <p>
+    We retain your personal data for as long as your account is active. Order and payment records
+    are retained for audit and compliance purposes. If you delete your account, your personal data
+    will be removed, though anonymised audit records may be retained for platform integrity.
+  </p>
+
+  <!-- Section 8: User rights under GDPR -->
+  <h3>8. Your Rights</h3>
+  <p>Under GDPR, you have the following rights:</p>
+  <ul style="margin:0 0 0 18px; padding:0; line-height:1.8">
+    <li><strong>Access:</strong> Request a copy of the personal data we hold about you.</li>
+    <li><strong>Rectification:</strong> Correct inaccurate data via your Account Settings page.</li>
+    <li><strong>Erasure:</strong> Request deletion of your personal data ("right to be forgotten").</li>
+    <li><strong>Withdraw consent:</strong> Withdraw marketing consent at any time via Account Settings without affecting prior processing.</li>
+    <li><strong>Data portability:</strong> Request your data in a commonly used, machine-readable format.</li>
+    <li><strong>Restriction:</strong> Request that we restrict processing of your data in certain circumstances.</li>
+    <li><strong>Objection:</strong> Object to processing based on legitimate interest.</li>
+  </ul>
+  <!-- Contact details and GDPR response timeframe -->
+  <p>
+    To exercise any of these rights, contact us at
+    <a href="mailto:robbie.wiseman13@gmail.com">robbie.wiseman13@gmail.com</a>.
+    We will respond within 30 days as required by GDPR.
+  </p>
+
+  <!-- Section 9: Cookie usage (session and CSRF only) -->
+  <h3>9. Cookies</h3>
+  <p>
+    CharityConnect uses session cookies to keep you logged in and to protect against cross-site
+    request forgery (CSRF). These are essential cookies required for the platform to function and
+    do not track you across other websites. We do not use advertising or analytics cookies.
+  </p>
+
+  <!-- Section 10: Security measures in place -->
+  <h3>10. Data Security</h3>
+  <p>
+    We take reasonable measures to protect your data, including: password hashing (Werkzeug/bcrypt),
+    CSRF protection on all forms, HTTPS encryption in production, and secure environment variable
+    management for API keys and database credentials.
+  </p>
+
+  <!-- Section 11: Age restriction -->
+  <h3>11. Children's Privacy</h3>
+  <p>
+    CharityConnect is not intended for users under the age of 18. We do not knowingly collect
+    personal data from children. If we become aware that a child has provided us with personal
+    data, we will take steps to delete it.
+  </p>
+
+  <!-- Section 12: Policy update process -->
+  <h3>12. Changes to This Policy</h3>
+  <p>
+    We may update this Privacy Policy from time to time. Any changes will be posted on this page
+    with an updated "Last updated" date. Continued use of CharityConnect after changes constitutes
+    acceptance of the revised policy.
+  </p>
+
+  <!-- Section 13: Contact details and Irish DPC complaint link -->
+  <h3>13. Contact and Complaints</h3>
+  <p>
+    For questions about this policy or to exercise your data rights, contact
+    <a href="mailto:robbie.wiseman13@gmail.com">robbie.wiseman13@gmail.com</a>.
+  </p>
+  <p>
+    You also have the right to lodge a complaint with the Irish Data Protection Commission:<br>
+    <a href="https://www.dataprotection.ie" target="_blank" rel="noopener">www.dataprotection.ie</a>
+  </p>
+
+  <!-- Back link to registration page -->
+  <div style="margin-top:24px; padding-top:16px; border-top:1px solid var(--line); font-size:.9rem; color:var(--muted)">
+    <a href="{{ url_for('main.register') }}">&larr; Back to registration</a>
+  </div>
+</div>
+
+{% endblock %}
+<!-- VERSION 6 END -->
