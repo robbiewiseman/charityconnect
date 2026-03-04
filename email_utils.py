@@ -6,37 +6,51 @@
 from flask import current_app
 from flask_mail import Message
 
+# Claude: https://claude.ai/share/259f7745-1066-4528-a8ab-213828dfac51
 # VERSION 6 START
 import base64
 import os
 
-# Reference: Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
-# https://developers.brevo.com/docs/send-a-transactional-email
 def _send_via_brevo(to_email, subject, body, pdf_bytes=None, filename=None):
-    """Send email via Brevo HTTP API — bypasses SMTP port blocks on Render free tier."""
-    import sib_api_v3_sdk
+    """Send a transactional email via Brevo's HTTP API.
+    Bypasses SMTP port blocks on Render free tier.
+    Args:
+        to_email:   Recipient email address.
+        subject:    Email subject line.
+        body:       Plain-text email body.
+        pdf_bytes:  Optional PDF content as bytes.
+        filename:   Filename for the PDF attachment.
+    """
+    # Reference: Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
+    # https://developers.brevo.com/docs/send-a-transactional-email
+    from sib_api_v3_sdk import Configuration, ApiClient, TransactionalEmailsApi, SendSmtpEmail
+
     api_key = os.getenv("BREVO_API_KEY")
     if not api_key:
         raise RuntimeError("BREVO_API_KEY not set")
+
     # Configure the Brevo API client with our API key
-    configuration = sib_api_v3_sdk.Configuration()
-    configuration.api_key["api-key"] = api_key
-    api_instance = sib_api_v3_sdk.TransactionalEmailsApi(
-        sib_api_v3_sdk.ApiClient(configuration)
-    )
-    # Build the email payload
-    send_smtp_email = sib_api_v3_sdk.SendSmtpEmail(
+    config = Configuration()
+    config.api_key["api-key"] = api_key
+    api = TransactionalEmailsApi(ApiClient(config))
+
+    # Build the email payload with sender name for professional inbox display
+    email = SendSmtpEmail(
         sender={"name": "CharityConnect", "email": os.getenv("BREVO_SENDER_EMAIL", "noreply@charityconnect.ie")},
         to=[{"email": to_email}],
         subject=subject,
         text_content=body,
     )
-    # Attach PDF if provided
+
+    # Attach PDF if provided (used for receipts)
     if pdf_bytes and filename:
-        encoded = base64.b64encode(pdf_bytes).decode("utf-8")
-        send_smtp_email.attachment = [{"content": encoded, "name": filename}]
+        email.attachment = [{
+            "content": base64.b64encode(pdf_bytes).decode("utf-8"),
+            "name": filename,
+        }]
+
     # Send the email via Brevo API
-    api_instance.send_transac_email(send_smtp_email)
+    api.send_transac_email(email)
 # VERSION 6 END
 
 def send_receipt_email(mail, to_email: str, subject: str, body: str, pdf_bytes: bytes, filename: str):

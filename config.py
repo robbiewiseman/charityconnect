@@ -63,7 +63,7 @@ class Config:
         "CharityConnect <no-reply@charityconnect.ie>"
     )
     # VERSION 6 START
-    # Timeout in seconds for SMTP connections — prevents worker hangs on Render
+    # Timeout in seconds for SMTP connections, prevents worker hangs on Render
     MAIL_TIMEOUT = int(os.getenv("MAIL_TIMEOUT", "10"))
     # VERSION 6 END
     # VERSION 4 END

@@ -384,3 +384,21 @@ routes.py (organiser_order_detail):
 - Called before fetching tickets to guarantee fresh redeemed and refunded states are displayed to the organiser when viewing an order.
 Notes: The SQLAlchemy session API documentation was referenced to understand how expire_all() forces the session to discard its cached object state, ensuring subsequent attribute access triggers a fresh database query. This was necessary to prevent stale ticket states being displayed immediately after a commit.
 
+=============================================================================================
+# VERSION 5 END
+=============================================================================================
+
+# VERSION 6 START
+=============================================================================================
+
+# Reference: SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
+# https://docs.sqlalchemy.org/en/20/core/inspection.html
+
+# Reference: GDPR Article 17 – Right to Erasure (European Commission, 2016)
+# https://gdpr-info.eu/art-17-gdpr/
+
+# Reference: Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
+# https://developers.brevo.com/docs/send-a-transactional-email
+
+# Reference: Render Build and Start Commands (Render, 2025)
+# https://docs.render.com/deploy-flask

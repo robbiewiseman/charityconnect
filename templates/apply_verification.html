@@ -13,7 +13,7 @@
     <label for="{{ form.org_type.id }}">I am applying as</label>
     <!-- VERSION 6 START -->
     {{ form.org_type(class="", id="org-type-select") }}
-    <!-- VERSION 6 START -->
+    <!-- VERSION 6 END -->
     {% for e in form.org_type.errors %}
       <div class="flash danger">{{ e }}</div>
     {% endfor %}
