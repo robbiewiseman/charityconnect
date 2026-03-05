@@ -74,9 +74,6 @@ https://jinja.palletsprojects.com/en/stable/templates/#template-inheritance -->
         <a class="btn primary" href="{{ url_for('main.order_receipt', order_id=order.id) }}">
           Download Receipt (PDF)
         </a>
-        <a class="btn outline" href="{{ url_for('main.order_verify', order_id=order.id) }}">
-          Verify via QR
-        </a>
         <a class="btn" href="{{ url_for('main.my_orders') }}">My Orders</a>
         <a class="btn" href="{{ url_for('main.index') }}">Back to Events</a>
       </div>

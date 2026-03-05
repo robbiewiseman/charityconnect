@@ -74,6 +74,7 @@ def create_app():
     app.register_blueprint(main_bp)
     return app
 
+
 # Run the application in debug mode if executed directly
 if __name__ == "__main__":
     app = create_app()

@@ -96,8 +96,15 @@
       <div class="row" style="gap:10px; margin-bottom:16px">
         <!-- Return to event listings -->
         <a class="btn" href="{{ url_for('main.index') }}">Back</a>
-        <!-- Proceed to checkout for this event -->
-        <a class="btn primary grow" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
+        <!-- VERSION 6 START -->
+        {% if ev.is_completed %}
+          <span class="badge grow" style="text-align:center; background:#E2E8F0; color:#0F172A; padding:10px;">This event has been completed</span>
+        {% elif ev.starts_at and ev.starts_at < now %}
+          <span class="badge grow" style="text-align:center; background:#FEF9C3; color:#854D0E; padding:10px;">This event has already started</span>
+        {% else %}
+          <a class="btn primary grow" href="{{ url_for('main.event_buy', event_id=ev.id) }}">Buy Tickets</a>
+        {% endif %}
+        <!-- VERSION 6 END -->
       </div>
 
       <p class="muted" style="font-size:.85rem; margin:0; line-height:1.5; text-align:center">

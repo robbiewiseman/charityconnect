@@ -180,7 +180,7 @@ JavaScript Logic in event_new.html and organiser_event_analytics.html: https://c
 # VERSION 5 END
 # VERSION 6 START
 Brevo transactional email: https://claude.ai/share/259f7745-1066-4528-a8ab-213828dfac51
-Updated CSS: https://claude.ai/share/70841908-94de-4726-b9f2-3fa6af666dbd
+Updated CSS: https://claude.ai/share/70841908-94de-4726-b9f2-3fa6af666dbd, in the shared chat Claude does not include the file that it created I have supplied a screenshot in the documentation of the same chat showing the file claude gave me.
 # VERSION 6 END
 
 ====================================================================================
@@ -395,15 +395,7 @@ Notes: The SQLAlchemy session API documentation was referenced to understand how
 # VERSION 6 START
 =============================================================================================
 
-33. SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
-URL: https://docs.sqlalchemy.org/en/20/core/inspection.html
-Usage:
-routes.py (admin_backup, admin_restore):
-- Using inspect(db.engine).get_table_names() to dynamically retrieve all database tables for JSON backup export.
-- Iterating table metadata for column-level data serialisation and restoration.
-Notes: The SQLAlchemy inspection API was referenced to implement a generic, schema-aware database backup and restore system without hardcoding table names.
-
-34. Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
+33. Brevo (Sendinblue) Transactional Email API (Brevo, 2025)
 URL: https://developers.brevo.com/docs/send-a-transactional-email
 Usage:
 email_utils.py:
@@ -413,14 +405,14 @@ email_utils.py:
 - All three email functions (send_receipt_email, send_refund_decision_email, send_impact_summary_email) check for BREVO_API_KEY and use Brevo if available, falling back to Flask-Mail for local development.
 Notes: The Brevo API documentation informed the configuration of the SDK client, sender formatting, attachment encoding, and transactional email dispatch. The implementation was developed with AI assistance using the sib-api-v3-sdk Python SDK.
 
-35. Render Build and Start Commands (Render, 2025)
+34. Render Build and Start Commands (Render, 2025)
 URL: https://docs.render.com/deploy-flask
 Usage:
 build.sh: Build script for Render deployment including pip install and database table creation.
 Render dashboard: Configuration of gunicorn start command and environment variables.
 Notes: Render's Flask deployment documentation guided the production hosting configuration, including the build script structure and gunicorn binding.
 
-36. GDPR Article 17 – Right to Erasure (European Commission, 2016)
+35. GDPR Article 17 – Right to Erasure (European Commission, 2016)
 URL: https://gdpr-info.eu/art-17-gdpr/
 Usage:
 routes.py (delete_account):

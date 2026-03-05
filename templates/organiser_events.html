@@ -75,11 +75,17 @@
 
             <!-- Publish Now button shown only for draft events -->
             {% if not ev.published %}
-              <div style="margin-top:10px; display:flex; gap:8px;">
-                <form method="post" action="{{ url_for('main.organiser_event_publish', event_id=ev.id) }}" style="display:inline;">
-                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                  <button class="btn primary" type="submit" onclick="return confirm('Publish this event? It will be visible to the public.')">Publish Now</button>
-                </form>
+              <div style="margin-top:10px; display:flex; gap:8px; align-items:center;">
+                <!-- VERSION 6 START -->
+                {% if org and org.verified %}
+                  <form method="post" action="{{ url_for('main.organiser_event_publish', event_id=ev.id) }}" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn primary" type="submit" onclick="return confirm('Publish this event? It will be visible to the public.')">Publish Now</button>
+                  </form>
+                {% else %}
+                  <span class="muted" style="font-size:.85rem;">Verification required to publish</span>
+                {% endif %}
+                <!-- VERSION 6 END -->
                 <form method="post" action="{{ url_for('main.organiser_event_delete', event_id=ev.id) }}" style="display:inline;">
                   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <button class="btn danger-outline" type="submit" onclick="return confirm('Permanently delete this draft? This cannot be undone.')">Delete</button>

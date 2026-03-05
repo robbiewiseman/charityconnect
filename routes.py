@@ -8,7 +8,7 @@
 
 # VERSION 2 START
 from flask import (Blueprint, render_template, redirect, url_for, request, flash, abort, session, Response, send_file, current_app)
-import stripe, qrcode, io
+import stripe, qrcode, io, os
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
@@ -28,11 +28,6 @@ from forms import PurchaseForm, ApplyVerificationForm, EventForm, RegisterForm, 
 from flask_login import login_user, logout_user, login_required, current_user
 # VERSION 6 START
 from datetime import datetime, timedelta
-# Reference: SQLAlchemy Inspect — retrieving table names and column metadata (SQLAlchemy, 2025)
-# https://docs.sqlalchemy.org/en/20/core/inspection.html
-import json as _json
-import base64 as _base64
-from sqlalchemy import inspect as sa_inspect
 # VERSION 6 END
 from openrouter_client import chat, OpenRouterError
 # VERSION 3 END
@@ -435,6 +430,35 @@ def inject_current_role():
     return {"current_role": get_role(), "STRIPE_PUBLISHABLE_KEY": Config.STRIPE_PUBLISHABLE_KEY}
 # VERSION 2 END
 
+# VERSION 6 START
+# Auto-complete events that started more than 7 days ago and haven't been marked complete
+@bp.before_app_request
+def auto_complete_stale_events():
+    try:
+        cutoff = datetime.utcnow() - timedelta(days=7)
+        stale_events = Event.query.filter(
+            Event.is_completed == False,
+            Event.starts_at != None,
+            Event.starts_at < cutoff
+        ).all()
+        for ev in stale_events:
+            ev.is_completed = True
+            ev.completed_at = datetime.utcnow()
+            try:
+                log_action(
+                    action="EVENT_AUTO_COMPLETED",
+                    entity_type="Event",
+                    entity_id=ev.id,
+                    meta={"title": ev.title, "reason": "7 days past start time"},
+                )
+            except Exception:
+                pass
+        if stale_events:
+            db.session.commit()
+    except Exception:
+        pass
+# VERSION 6 END
+
 # Utility Function
 def cents(eur_decimal):
     return int(round(float(eur_decimal or 0) * 100))
@@ -537,7 +561,9 @@ def event_detail(event_id):
     ev = Event.query.get_or_404(event_id)
     if not ev.published and get_role() not in (ROLE_ORG, ROLE_ADMIN):
         abort(404)
-    return render_template("event_detail.html", ev=ev)
+    # VERSION 6 START
+    return render_template("event_detail.html", ev=ev, now=datetime.utcnow())
+    # VERSION 6 END
 
 @bp.route("/events/<int:event_id>/buy", methods=["GET","POST"])
 def event_buy(event_id):
@@ -554,6 +580,13 @@ def event_buy(event_id):
         flash("This event has ended and is no longer accepting purchases.", "warning")
         return redirect(url_for("main.event_detail", event_id=ev.id))
     # VERSION 4 END
+
+    # VERSION 6 START
+    # Prevent purchases if the event start time has passed
+    if ev.starts_at and ev.starts_at < datetime.utcnow():
+        flash("This event has already started and is no longer accepting ticket purchases.", "warning")
+        return redirect(url_for("main.event_detail", event_id=ev.id))
+    # VERSION 6 END
 
     form = PurchaseForm()
     if form.validate_on_submit():
@@ -804,7 +837,7 @@ def organiser_scan_ticket(order_id):
     # Block redemption if the order has not been paid
     if order.status != "PAID":
         return render_template("organiser_scan_result.html", success=False, message="This order has not been paid.", order=order, tickets=None)
-    # Reference: SQLAlchemy Session.expire_all() — forcing fresh state from the database (SQLAlchemy, 2025)
+    # Reference: SQLAlchemy Session.expire_all() - forcing fresh state from the database (SQLAlchemy, 2025)
     # https://docs.sqlalchemy.org/en/20/orm/session_api.html#sqlalchemy.orm.Session.expire_all
     # Expire session cache so ticket states are always fresh from the database
     db.session.expire_all()
@@ -911,7 +944,7 @@ def account():
 # VERSION 3 END
 
 # VERSION 6 START
-# Account deletion — anonymises personal data and logs the user out
+# Account deletion - anonymises personal data and logs the user out
 # Reference: GDPR Article 17 – Right to Erasure (European Commission, 2016)
 # https://gdpr-info.eu/art-17-gdpr/
 @bp.route("/account/delete", methods=["POST"])
@@ -1476,6 +1509,13 @@ def event_new():
         if not org:
             flash("Your organiser account is not linked to an organiser profile.", "danger")
             return redirect(url_for("main.index"))
+        
+        # VERSION 6 START
+        # If trying to publish, check organiser is verified
+        if form.published.data and not org.verified:
+            flash("You must be verified by an admin before you can publish events.", "warning")
+            form.published.data = False
+        # VERSION 6 END
 
         # Create event record
         ev = Event(
@@ -1668,6 +1708,12 @@ def organiser_event_edit(event_id):
         if total_alloc != 100:
             flash("Allocation must total 100%.", "danger")
             return render_template("organiser_event_edit.html", form=form, ev=ev)
+    
+        # VERSION 6 START
+        if form.published.data and not org.verified:
+            flash("You must be verified by an admin before you can publish events.", "warning")
+            form.published.data = False
+        # VERSION 6 END
 
         # Update event fields
         ev.title = form.title.data.strip()
@@ -2104,6 +2150,11 @@ def organiser_event_publish(event_id):
 
     ev, org = _get_event_for_current_organiser_or_404(event_id)
 
+    # Block publishing if organiser is not verified
+    if not org.verified:
+        flash("You must be verified by an admin before you can publish events.", "warning")
+        return redirect(url_for("main.organiser_events"))
+
     # Publish the event
     ev.published = True
     db.session.commit()
@@ -2341,7 +2392,7 @@ def organiser_resolve_refund(req_id):
 # VERSION 5 END
 
 # VERSION 6 START
-# Public health check endpoint — returns JSON with service statuses
+# Public health check endpoint - returns JSON with service statuses
 # Used to verify the backend is online and all connected services are reachable
 @bp.route("/health")
 def health_check():
@@ -2353,13 +2404,13 @@ def health_check():
     except Exception:
         pass
     # Check if email SMTP credentials are configured
-    status["email_configured"] = bool(current_app.config.get("MAIL_USERNAME"))
-    # Overall status — healthy if at least the database is reachable
+    status["email_configured"] = bool(os.getenv("BREVO_API_KEY")) or bool(current_app.config.get("MAIL_USERNAME"))
+    # Overall status - healthy if at least the database is reachable
     all_ok = status["database"]
     code = 200 if all_ok else 503
     return {"status": "healthy" if all_ok else "degraded", "services": status}, code
 
-# Admin system health dashboard — displays live service connectivity for the platform
+# Admin system health dashboard - displays live service connectivity for the platform
 @bp.route("/admin/system-health")
 @login_required
 def admin_system_health():
@@ -2373,13 +2424,20 @@ def admin_system_health():
         checks.append({"name": "PostgreSQL Database", "ok": True, "detail": "Connected"})
     except Exception as e:
         checks.append({"name": "PostgreSQL Database", "ok": False, "detail": str(e)[:120]})
-    # 2. Email SMTP configuration
+    # 2. Email configuration (Brevo HTTP API or SMTP fallback)
+    brevo_ok = bool(os.getenv("BREVO_API_KEY"))
     mail_ok = bool(current_app.config.get("MAIL_USERNAME"))
-    mail_server = current_app.config.get("MAIL_SERVER", "N/A")
+    email_ok = brevo_ok or mail_ok
+    if brevo_ok:
+        email_detail = "Configured via Brevo HTTP API"
+    elif mail_ok:
+        email_detail = f"Configured via SMTP ({current_app.config.get('MAIL_SERVER', 'N/A')})"
+    else:
+        email_detail = "No email provider configured (set BREVO_API_KEY or MAIL_USERNAME)"
     checks.append({
-        "name": "Email (SMTP)",
-        "ok": mail_ok,
-        "detail": f"Configured via {mail_server}" if mail_ok else "MAIL_USERNAME not set in environment"
+        "name": "Email Service",
+        "ok": email_ok,
+        "detail": email_detail
     })
     # 3. Stripe payment gateway configuration
     stripe_ok = bool(current_app.config.get("STRIPE_SECRET_KEY"))
@@ -2396,107 +2454,6 @@ def admin_system_health():
         "detail": f"Model: {current_app.config.get('OPENROUTER_MODEL', 'N/A')}" if ai_ok else "OPENROUTER_API_KEY not set"
     })
     return render_template("admin_system_health.html", checks=checks)
-
-# Admin database backup — exports all table data as a downloadable JSON file
-# This approach uses pure SQLAlchemy so it works with Neon (hosted PostgreSQL)
-# without needing pg_dump installed locally
-@bp.route("/admin/backup")
-@login_required
-def admin_backup():
-    # Block access if the user is not an admin
-    if getattr(current_user, "role", None) != ROLE_ADMIN:
-        abort(403)
-    try:
-        # Get all table names from the database
-        inspector = sa_inspect(db.engine)
-        table_names = inspector.get_table_names()
-        backup_data = {"_meta": {"created_at": datetime.utcnow().isoformat(), "tables": table_names}}
-        # Export each table's rows as a list of dictionaries
-        for table_name in table_names:
-            rows = db.session.execute(text(f'SELECT * FROM "{table_name}"')).mappings().all()
-            serialised_rows = []
-            for row in rows:
-                row_dict = {}
-                for key, value in dict(row).items():
-                    # Convert bytes (e.g. receipt_pdf, cover_image) to base64 strings
-                    if isinstance(value, bytes):
-                        row_dict[key] = {"_bytes": _base64.b64encode(value).decode("ascii")}
-                    elif isinstance(value, datetime):
-                        row_dict[key] = value.isoformat()
-                    else:
-                        row_dict[key] = value
-                serialised_rows.append(row_dict)
-            backup_data[table_name] = serialised_rows
-        # Generate timestamped filename and return as download
-        filename = f"charityconnect_backup_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.json"
-        log_action(
-            action="DATABASE_BACKUP",
-            entity_type="System",
-            entity_id=None,
-            meta={"filename": filename, "tables": len(table_names)}
-        )
-        return Response(
-            _json.dumps(backup_data, indent=2, default=str),
-            mimetype="application/json",
-            headers={"Content-Disposition": f"attachment; filename={filename}"}
-        )
-    except Exception as e:
-        flash(f"Backup failed: {str(e)[:200]}", "danger")
-        return redirect(url_for("main.admin_home"))
-# Admin database restore page — upload a previously downloaded backup JSON file
-@bp.route("/admin/restore", methods=["GET", "POST"])
-@login_required
-def admin_restore():
-    # Block access if the user is not an admin
-    if getattr(current_user, "role", None) != ROLE_ADMIN:
-        abort(403)
-    if request.method == "POST":
-        file = request.files.get("backup_file")
-        if not file or not file.filename.endswith(".json"):
-            flash("Please upload a valid .json backup file.", "danger")
-            return redirect(url_for("main.admin_restore"))
-        try:
-            # Parse the uploaded JSON backup
-            backup_data = _json.loads(file.read().decode("utf-8"))
-            meta = backup_data.get("_meta", {})
-            table_names = meta.get("tables", [])
-            restored_count = 0
-            # Disable foreign key checks temporarily for clean restore
-            db.session.execute(text("SET session_replication_role = 'replica'"))
-            for table_name in table_names:
-                rows = backup_data.get(table_name, [])
-                if not rows:
-                    continue
-                # Clear existing data from the table
-                db.session.execute(text(f'DELETE FROM "{table_name}"'))
-                # Insert each row back
-                for row in rows:
-                    # Convert base64 back to bytes for binary columns
-                    for key, value in row.items():
-                        if isinstance(value, dict) and "_bytes" in value:
-                            row[key] = _base64.b64decode(value["_bytes"])
-                    columns = ", ".join(f'"{k}"' for k in row.keys())
-                    placeholders = ", ".join(f":{k}" for k in row.keys())
-                    db.session.execute(
-                        text(f'INSERT INTO "{table_name}" ({columns}) VALUES ({placeholders})'),
-                        row
-                    )
-                    restored_count += 1
-            # Re-enable foreign key checks
-            db.session.execute(text("SET session_replication_role = 'origin'"))
-            db.session.commit()
-            log_action(
-                action="DATABASE_RESTORED",
-                entity_type="System",
-                entity_id=None,
-                meta={"filename": file.filename, "rows_restored": restored_count}
-            )
-            flash(f"Database restored successfully ({restored_count} rows across {len(table_names)} tables).", "success")
-        except Exception as e:
-            db.session.rollback()
-            flash(f"Restore failed: {str(e)[:300]}", "danger")
-        return redirect(url_for("main.admin_home"))
-    return render_template("admin_restore.html")
 
 # Admin platform-wide analytics dashboard
 # Shows aggregated metrics across all events, donations, and users
@@ -2546,7 +2503,7 @@ def admin_failed_payments():
     # Block access if the user is not an admin
     if getattr(current_user, "role", None) != ROLE_ADMIN:
         abort(403)
-    # Fetch all orders that are NOT paid — these represent failed or abandoned payments
+    # Fetch all orders that are NOT paid - these represent failed or abandoned payments
     failed_orders = (
         Order.query
         .filter(Order.status != "PAID")
